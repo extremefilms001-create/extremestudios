@@ -1,10 +1,24 @@
 {
   "hosting": {
-    "public": "public",
+    "public": "deploy-dist",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/uploadToDrive",
+        "function": "uploadToDrive"
+      },
+      {
+        "source": "/studio{,/**}",
+        "destination": "/studio/index.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
   },
   "functions": {
