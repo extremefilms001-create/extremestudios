@@ -1,0 +1,146 @@
+.home-page {
+  padding-top: 0; /* Remove top padding to let hero start under navbar */
+}
+
+.hero-section {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  background: radial-gradient(circle at center, var(--color-black-lighter) 0%, var(--color-black) 100%);
+  will-change: opacity, transform;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('data:image/svg+xml;utf8,<svg width="4" height="4" viewBox="0 0 4 4" xmlns="http://www.w3.org/2000/svg"><rect width="4" height="4" fill="none"/><circle cx="2" cy="2" r="1" fill="rgba(255,255,255,0.05)"/></svg>');
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  padding: 0 var(--space-md);
+}
+
+.hero-title {
+  font-size: 4rem;
+  letter-spacing: 2px;
+  margin-bottom: var(--space-md);
+  text-transform: uppercase;
+}
+
+.hero-title .text-gradient {
+  background: linear-gradient(90deg, var(--color-red) 0%, var(--color-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  color: var(--color-white-dim);
+  margin-bottom: var(--space-lg);
+  line-height: 1.8;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+/* Content Sections */
+.content-sections {
+  position: relative;
+  z-index: 3;
+  background-color: var(--color-black);
+  padding: var(--space-xl) 0;
+}
+
+.content-row {
+  margin-bottom: var(--space-xl);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: var(--space-sm);
+}
+
+.see-all {
+  color: var(--color-gold);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.see-all:hover {
+  text-decoration: underline;
+}
+
+.grid-feed {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--space-lg);
+}
+
+.feed-card {
+  display: block;
+  background-color: var(--color-black-light);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.feed-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--color-red);
+}
+
+.card-image {
+  height: 350px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--color-black-lighter);
+}
+
+.card-info {
+  padding: var(--space-md);
+}
+
+.card-info h3 {
+  font-size: 1.1rem;
+  margin-bottom: var(--space-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.empty-state {
+  color: var(--color-white-muted);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+}

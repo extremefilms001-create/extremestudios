@@ -1,0 +1,226 @@
+.content-page {
+  min-height: 100vh;
+  padding-bottom: var(--space-xl);
+}
+
+.pt-offset {
+  padding-top: 100px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xl);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: var(--space-md);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filters {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  background: transparent;
+  border: 1px solid var(--color-white-dim);
+  color: var(--color-white);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-btn.active, .filter-btn:hover {
+  background: var(--color-red);
+  border-color: var(--color-red);
+}
+
+.price-tag {
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-left: 0.5rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.price-tag.free {
+  background-color: rgba(0, 200, 0, 0.2);
+  color: #00ff00;
+}
+
+.price-tag.premium {
+  background-color: rgba(255, 215, 0, 0.2);
+  color: var(--color-gold);
+}
+
+.feed-card {
+  cursor: pointer;
+}
+
+.upcoming-tag {
+  background: var(--color-red);
+  color: white;
+  padding: 0.5rem;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-weight: bold;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(5px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+}
+
+.modal-content {
+  position: relative;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.video-modal {
+  width: 100%;
+  max-width: 1000px;
+  background: var(--color-black);
+}
+
+.payment-modal {
+  width: 100%;
+  max-width: 500px;
+  padding: var(--space-xl);
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  z-index: 10;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: var(--color-red);
+}
+
+/* Video Player */
+.video-player {
+  display: flex;
+  flex-direction: column;
+}
+
+.video-player iframe {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border: none;
+}
+
+.video-info {
+  padding: var(--space-md);
+}
+
+.payment-instructions {
+  margin: var(--space-md) 0;
+  color: var(--color-white-dim);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.flex-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 300px;
+  padding: var(--space-lg);
+}
+
+.countdown {
+  margin-top: var(--space-lg);
+  font-size: 2rem;
+  font-family: var(--font-heading);
+  letter-spacing: 5px;
+  color: var(--color-gold);
+}
+
+/* Series Player Sidebar layout */
+.series-player-layout {
+  display: flex;
+  height: 80vh;
+}
+
+.series-video-area {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-black);
+}
+
+.series-video-area iframe {
+  width: 100%;
+  height: 100%;
+  flex-grow: 1;
+  border: none;
+}
+
+.series-episodes-sidebar {
+  flex: 1;
+  background: var(--color-black-light);
+  border-left: 1px solid rgba(255,255,255,0.1);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.episode-item {
+  padding: var(--space-md);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.episode-item:hover, .episode-item.active {
+  background: rgba(230, 0, 0, 0.2);
+  border-left: 3px solid var(--color-red);
+}
+
+.episode-item h4 {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+}
+
+@media (max-width: 800px) {
+  .series-player-layout {
+    flex-direction: column;
+    height: 90vh;
+  }
+  .series-video-area {
+    flex: initial;
+    aspect-ratio: 16/9;
+  }
+  .series-episodes-sidebar {
+    flex: 1;
+  }
+}
