@@ -10,6 +10,11 @@ function Settings() {
   const canEditServices = ['HUMAN RESOURCES', 'MANAGING DIRECTOR', 'ASS. MANAGING DIRECTOR', 'SECRETARY'].includes(userData?.role?.toUpperCase());
 
   const [contacts, setContacts] = useState({ whatsapp: '', email: '' });
+  const [branding, setBranding] = useState({ 
+    headerTitle: 'EXTREME STUDIOS', 
+    footerTitle: 'EXTREME STUDIOS', 
+    footerAbout: 'We are a passionate creative team dedicated to bringing your vision to life through high-quality visual storytelling. Whether we are capturing a special event, producing a commercial project, or shooting a creative film, we put our skills and energy into every single frame.' 
+  });
   const [saveStatus, setSaveStatus] = useState('');
 
   useEffect(() => {
@@ -20,16 +25,35 @@ function Settings() {
     const contactRef = doc(db, 'site_settings', 'contacts');
     const cSnap = await getDoc(contactRef);
     if (cSnap.exists()) setContacts(cSnap.data());
+
+    const brandingRef = doc(db, 'site_settings', 'branding');
+    const bSnap = await getDoc(brandingRef);
+    if (bSnap.exists()) {
+      setBranding((prev) => ({ ...prev, ...bSnap.data() }));
+    }
   }
+
+  const showSuccess = () => {
+    setSaveStatus('Settings Saved!');
+    setTimeout(() => setSaveStatus(''), 3000);
+  };
 
   const handleSaveContacts = async (e) => {
     e.preventDefault();
     if (!canEditServices) return alert('Unauthorized');
     
-    setSaveStatus('Saving...');
+    setSaveStatus('Saving Contacts...');
     await setDoc(doc(db, 'site_settings', 'contacts'), contacts);
-    setSaveStatus('Settings Saved!');
-    setTimeout(() => setSaveStatus(''), 3000);
+    showSuccess();
+  };
+
+  const handleSaveBranding = async (e) => {
+    e.preventDefault();
+    if (!canEditBranding) return alert('Unauthorized');
+    
+    setSaveStatus('Saving Branding...');
+    await setDoc(doc(db, 'site_settings', 'branding'), branding);
+    showSuccess();
   };
 
   return (
@@ -43,11 +67,39 @@ function Settings() {
       <div style={{display: 'flex', flexDirection: 'column', gap: '2rem'}}>
         {canEditBranding && (
           <div className="admin-card">
-            <h3>Branding & General (Available for CEO/SECRETARY)</h3>
-            <p style={{color: 'var(--color-white-dim)', marginTop: '1rem'}}>
-              Currently, Branding is hardcoded to "Extreme Studios" per the requirements. 
-              In the future, Logo links, Heading, and Footer overrides can be configured here.
+            <h3>Branding, Header & Footer (CEO/SECRETARY)</h3>
+            <p style={{color: 'var(--color-white-dim)', marginBottom: '1rem'}}>
+              Update the main text used to brand the Public Site.
             </p>
+
+            <form onSubmit={handleSaveBranding} style={{display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '600px'}}>
+              <div className="form-group">
+                <label>Header Title Bar (e.g. EXTREME STUDIOS)</label>
+                <input 
+                  value={branding.headerTitle} 
+                  onChange={e => setBranding({...branding, headerTitle: e.target.value})} 
+                  placeholder="EXTREME STUDIOS" 
+                />
+              </div>
+              <div className="form-group">
+                <label>Footer Brand Title</label>
+                <input 
+                  value={branding.footerTitle} 
+                  onChange={e => setBranding({...branding, footerTitle: e.target.value})} 
+                  placeholder="EXTREME STUDIOS" 
+                />
+              </div>
+              <div className="form-group">
+                <label>Footer 'About' Description Paragraph</label>
+                <textarea 
+                  value={branding.footerAbout} 
+                  onChange={e => setBranding({...branding, footerAbout: e.target.value})} 
+                  rows={5}
+                  placeholder="We are a passionate team..." 
+                />
+              </div>
+              <button type="submit" className="btn-primary" style={{alignSelf: 'flex-start'}}>Save Branding</button>
+            </form>
           </div>
         )}
 

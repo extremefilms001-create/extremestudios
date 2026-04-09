@@ -1,11 +1,24 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { FaUserCircle } from 'react-icons/fa';
 import './Navbar.css';
 
 function Navbar() {
   const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
+  const [headerTitle, setHeaderTitle] = useState('EXTREME STUDIOS');
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'site_settings', 'branding'), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().headerTitle) {
+        setHeaderTitle(docSnap.data().headerTitle);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   async function handleLogout() {
     try {
@@ -19,7 +32,7 @@ function Navbar() {
   return (
     <nav className="navbar glass">
       <div className="container nav-container">
-        <Link to="/" className="nav-brand text-gradient">EXTREME STUDIOS</Link>
+        <Link to="/" className="nav-brand text-gradient">{headerTitle}</Link>
         <div className="nav-links">
           <Link to="/">Home</Link>
           <Link to="/films">Films</Link>

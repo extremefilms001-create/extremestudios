@@ -79,9 +79,34 @@ exports.uploadToDrive = functions.https.onRequest((req, res) => {
 
             // Determine parent folder ID
             const motherFolder = metadata['motherFolder'] || 'PRE-PRODUCTION';
-            const parentId = FOLDER_MAP[motherFolder];
+            const projectFolder = metadata['projectFolder'];
+            let parentId = FOLDER_MAP[motherFolder];
 
             try {
+              // Handle Nested Project Folder finding/creation
+              if (projectFolder && parentId) {
+                const query = `name = '${projectFolder.replace(/'/g, "\\'")}' and '${parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+                const searchRes = await drive.files.list({
+                  q: query,
+                  fields: 'files(id, name)',
+                  spaces: 'drive'
+                });
+
+                if (searchRes.data.files && searchRes.data.files.length > 0) {
+                  parentId = searchRes.data.files[0].id;
+                } else {
+                  const folderRes = await drive.files.create({
+                    requestBody: {
+                      name: projectFolder,
+                      mimeType: 'application/vnd.google-apps.folder',
+                      parents: [parentId]
+                    },
+                    fields: 'id'
+                  });
+                  parentId = folderRes.data.id;
+                }
+              }
+
               const driveRes = await drive.files.create({
                 requestBody: {
                   name: filename,

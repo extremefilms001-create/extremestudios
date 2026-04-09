@@ -1,15 +1,34 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { FaInstagram, FaTwitter, FaTiktok, FaWhatsapp, FaYoutube, FaEnvelope } from 'react-icons/fa';
 import './Footer.css';
 
 function Footer() {
+  const [footerTitle, setFooterTitle] = useState('EXTREME STUDIOS');
+  const [footerAbout, setFooterAbout] = useState('We are a passionate creative team dedicated to bringing your vision to life through high-quality visual storytelling. Whether we are capturing a special event, producing a commercial project, or shooting a creative film, we put our skills and energy into every single frame.');
+  const [footerRights, setFooterRights] = useState('');
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'site_settings', 'branding'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.footerTitle) setFooterTitle(data.footerTitle);
+        if (data.footerAbout) setFooterAbout(data.footerAbout);
+        if (data.headerTitle) setFooterRights(data.headerTitle);
+      }
+    });
+    return () => unsub();
+  }, []);
+
   return (
     <footer className="footer">
       <div className="container footer-container">
         <div className="footer-col">
-          <h3 className="text-gradient">EXTREME STUDIOS</h3>
+          <h3 className="text-gradient">{footerTitle}</h3>
           <p className="about-text">
-            We are a passionate creative team dedicated to bringing your vision to life through high-quality visual storytelling. Whether we are capturing a special event, producing a commercial project, or shooting a creative film, we put our skills and energy into every single frame.
+            {footerAbout}
           </p>
         </div>
         
@@ -46,7 +65,7 @@ function Footer() {
         </div>
       </div>
       <div className="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} Extreme Studios. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} {footerRights || 'Extreme Studios'}. All rights reserved.</p>
       </div>
     </footer>
   );

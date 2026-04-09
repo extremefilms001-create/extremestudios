@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import './Content.css';
 
 function Series() {
@@ -27,7 +27,7 @@ function Series() {
   }, []);
 
   const handleSelect = (s) => {
-    if (!currentUser && !s.isFree) {
+    if (!currentUser) {
       alert("Please log in or sign up first to access this content.");
       return;
     }
@@ -53,10 +53,13 @@ function Series() {
         txId,
         contentId: selectedSeries.id,
         contentTitle: selectedSeries.title,
-        status: 'pending',
+        status: 'approved',
         createdAt: new Date().toISOString()
       });
-      setPaymentMsg('Payment submitted successfully. An Admin will verify and grant access shortly.');
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        access: arrayUnion(selectedSeries.id)
+      });
+      setPaymentMsg('Payment submitted successfully! Unlocking content...');
       setTxId(''); setPayFirst(''); setPayLast('');
     } catch (err) {
       setPaymentMsg('Failed to submit, try again. ' + err.message);
