@@ -11,6 +11,10 @@ function Transactions() {
   
   const canVerify = ['CEO', 'SECRETARY', 'FINANCIAL MANAGER', 'ASSISTANT FINANCIAL MANAGER'].includes(userData?.role?.toUpperCase());
 
+  const totalCash = transactions
+    .filter(tx => tx.status !== 'declined')
+    .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+
   useEffect(() => {
     loadTransactions();
   }, []);
@@ -50,9 +54,15 @@ function Transactions() {
 
   return (
     <div className="admin-transactions">
-      <div className="admin-page-header">
-        <h1 className="text-gradient">Transactions</h1>
-        <p style={{color: 'var(--color-white-dim)'}}>Verify user payments for premium content access.</p>
+      <div className="admin-page-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+        <div>
+          <h1 className="text-gradient">Transactions</h1>
+          <p style={{color: 'var(--color-white-dim)'}}>Verify user payments for premium content access.</p>
+        </div>
+        <div style={{background: 'rgba(212, 175, 55, 0.1)', border: '1px solid var(--color-gold)', padding: '1rem', borderRadius: '8px', textAlign: 'right'}}>
+          <p style={{margin: 0, fontSize: '0.9rem', color: 'var(--color-white-dim)'}}>Total Cash Made</p>
+          <h2 style={{margin: 0, color: 'var(--color-gold)'}}>{totalCash.toLocaleString()} RWF</h2>
+        </div>
       </div>
 
       <div className="admin-card">
@@ -61,7 +71,8 @@ function Transactions() {
             <tr>
               <th>Date</th>
               <th>User Name</th>
-              <th>Payee Name</th>
+              <th>Channel</th>
+              <th>Amount</th>
               <th>TxID</th>
               <th>Content</th>
               <th>Status</th>
@@ -72,8 +83,9 @@ function Transactions() {
             {transactions.map(tx => (
               <tr key={tx.id}>
                 <td>{new Date(tx.createdAt).toLocaleDateString()}</td>
-                <td>{tx.userName}</td>
-                <td>{tx.payeeFirstName} {tx.payeeLastName}</td>
+                <td>{tx.userName}<br/><span style={{fontSize: '0.75rem', color: 'var(--color-white-muted)'}}>{tx.userEmail}</span></td>
+                <td>{tx.channel || 'MoMo'}</td>
+                <td>{(Number(tx.amount) || 0).toLocaleString()} RWF</td>
                 <td style={{fontFamily: 'monospace', color: 'var(--color-gold)'}}>{tx.txId}</td>
                 <td>{tx.contentTitle}</td>
                 <td>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc, arrayUnion } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlert } from '../contexts/AlertContext';
 
@@ -8,47 +8,147 @@ function Deploy() {
   const { userData } = useAuth();
   const showAlert = useAlert();
   const [items, setItems] = useState([]);
-  const [view, setView] = useState('films');
+  const [seriesItems, setSeriesItems] = useState([]);
+  const [view, setView] = useState('products'); // films, series, products
   const [formData, setFormData] = useState({ title: '', type: 'Feature Film', description: '', thumbnail: '', videoUrl: '', isFree: true, published: true });
   
+  // Episode state
+  const [activeSeries, setActiveSeries] = useState(null);
+  const [epFormData, setEpFormData] = useState({ title: '', description: '', thumbnail: '', videoUrl: '', duration: '' });
+
   const canDeploy = ['CEO', 'SECRETARY', 'PRESIDENT', 'CREATIVE MANAGER', 'MANAGING DIRECTOR'].includes(userData?.role?.toUpperCase());
   const canHide = ['CEO', 'SECRETARY'].includes(userData?.role?.toUpperCase());
 
   useEffect(() => {
     loadItems();
+    setActiveSeries(null); // Reset when switching views
   }, [view]);
 
   async function loadItems() {
-    const snap = await getDocs(collection(db, view));
-    setItems(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    if (view === 'products') {
+      const fSnap = await getDocs(collection(db, 'films'));
+      const sSnap = await getDocs(collection(db, 'series'));
+      setItems(fSnap.docs.map(d => ({id: d.id, _collection: 'films', ...d.data()})));
+      setSeriesItems(sSnap.docs.map(d => ({id: d.id, _collection: 'series', ...d.data()})));
+    } else {
+      const snap = await getDocs(collection(db, view));
+      setItems(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    }
   }
 
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!canDeploy) return showAlert('Unauthorized');
     try {
-      await addDoc(collection(db, view), {
-        ...formData,
+      const baseData = {
+        title: formData.title,
+        type: formData.type,
+        description: formData.description,
+        thumbnail: formData.thumbnail,
+        isFree: formData.isFree,
+        published: formData.published,
+        views: 0,
+        likes: 0,
+        dislikes: 0,
+        likedBy: [],
+        dislikedBy: [],
         createdAt: new Date().toISOString()
-      });
-      setFormData({ title: '', type: 'Feature Film', description: '', thumbnail: '', videoUrl: '', isFree: true, published: true });
+      };
+
+      if (view === 'films') {
+        baseData.videoUrl = formData.videoUrl;
+      } else {
+        baseData.episodes = []; // Init empty episodes array for Series
+      }
+
+      await addDoc(collection(db, view), baseData);
+      setFormData({ title: '', type: view === 'films' ? 'Feature Film' : 'Series', description: '', thumbnail: '', videoUrl: '', isFree: true, published: true });
       loadItems();
+      showAlert('Content Deployed Successfully!', 'success');
     } catch(err) {
       console.error(err);
+      showAlert('Failed to deploy content.');
     }
   };
 
-  const togglePublish = async (item) => {
+  const handleAddEpisodeSubmit = async (e) => {
+    e.preventDefault();
+    if (!canDeploy) return showAlert('Unauthorized');
+    try {
+      await updateDoc(doc(db, 'series', activeSeries.id), {
+        episodes: arrayUnion({ ...epFormData })
+      });
+      setEpFormData({ title: '', description: '', thumbnail: '', videoUrl: '', duration: '' });
+      setActiveSeries(null);
+      loadItems();
+      showAlert('Episode Added Successfully!', 'success');
+    } catch(err) {
+      console.error(err);
+      showAlert('Failed to add episode.');
+    }
+  };
+
+  const togglePublish = async (item, collectionName) => {
     if (!canHide) return showAlert('Only CEO and SECRETARY can hide/show content.');
-    await updateDoc(doc(db, view, item.id), { published: !item.published });
+    const targetCollection = collectionName || view;
+    await updateDoc(doc(db, targetCollection, item.id), { published: !item.published });
     loadItems();
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, collectionName) => {
     if (!canHide) return showAlert('Unauthorized');
-    await deleteDoc(doc(db, view, id));
+    const targetCollection = collectionName || view;
+    await deleteDoc(doc(db, targetCollection, id));
     loadItems();
   };
+
+  // Render Table function
+  const renderTable = (data, title, typeLabel) => (
+    <div className="admin-card" style={{marginBottom: '2rem'}}>
+      <h3>{title}</h3>
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Type</th>
+            {typeLabel === 'series' && <th>Episodes</th>}
+            <th>Access</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(item => (
+            <tr key={item.id}>
+              <td>{item.title}</td>
+              <td><span className="badge">{item.type}</span></td>
+              {typeLabel === 'series' && <td><span className="badge badge-pending">{item.episodes?.length || 0}</span></td>}
+              <td>{item.isFree ? <span className="badge badge-approved">Free</span> : <span className="badge badge-pending">Premium</span>}</td>
+              <td>{item.published ? <span className="badge badge-approved">Public</span> : <span className="badge badge-declined">Hidden</span>}</td>
+              <td>
+                {typeLabel === 'series' && canDeploy && (
+                  <button className="btn-secondary" style={{padding: '0.2rem 0.6rem', fontSize: '0.8rem', marginRight: '0.5rem', borderColor: 'var(--color-gold)', color: 'var(--color-gold)'}} onClick={() => setActiveSeries(item)}>
+                    + Episode
+                  </button>
+                )}
+                {canHide && (
+                  <>
+                    <button className="btn-secondary" style={{padding: '0.2rem 0.6rem', fontSize: '0.8rem', marginRight: '0.5rem'}} onClick={() => togglePublish(item, item._collection)}>
+                      {item.published ? 'Hide' : 'Publish'}
+                    </button>
+                    <button className="btn-secondary" style={{padding: '0.2rem 0.6rem', fontSize: '0.8rem', color: 'var(--color-red)', borderColor: 'var(--color-red)'}} onClick={() => handleDelete(item.id, item._collection)}>Delete</button>
+                  </>
+                )}
+              </td>
+            </tr>
+          ))}
+          {data.length === 0 && (
+            <tr><td colSpan="6" style={{textAlign: 'center', padding: '1rem', color: 'var(--color-white-muted)'}}>No content found.</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
 
   return (
     <div className="admin-deploy">
@@ -59,64 +159,67 @@ function Deploy() {
       <div style={{display: 'flex', gap: '1rem', marginBottom: '2rem'}}>
         <button className={view === 'films' ? 'btn-primary' : 'btn-secondary'} onClick={() => setView('films')}>Manage Films</button>
         <button className={view === 'series' ? 'btn-primary' : 'btn-secondary'} onClick={() => setView('series')}>Manage Series</button>
+        <button className={view === 'products' ? 'btn-primary' : 'btn-secondary'} onClick={() => setView('products')}>Current Products</button>
       </div>
 
-      {canDeploy && (
+      {(view === 'films' || view === 'series') && canDeploy && (
         <div className="admin-card">
           <h3>Add New {view === 'films' ? 'Film' : 'Series'}</h3>
           <form onSubmit={handleAdd} style={{marginTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
             <input required placeholder="Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-            <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
-              <option value="Feature Film">Feature Film</option>
-              <option value="Short Film">Short Film</option>
-              <option value="Upcoming">Upcoming</option>
-            </select>
-            <input required placeholder="Thumbnail Link" value={formData.thumbnail} onChange={e => setFormData({...formData, thumbnail: e.target.value})} />
-            <input placeholder="Video Link (Drive, YT, etc)" value={formData.videoUrl} onChange={e => setFormData({...formData, videoUrl: e.target.value})} />
+            
+            {view === 'films' ? (
+              <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
+                <option value="Feature Film">Feature Film</option>
+                <option value="Short Film">Short Film</option>
+                <option value="Upcoming">Upcoming</option>
+              </select>
+            ) : (
+              <input required placeholder="Series Type/Genre" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} />
+            )}
+
+            <input required placeholder="General Thumbnail Link" value={formData.thumbnail} onChange={e => setFormData({...formData, thumbnail: e.target.value})} />
+            
+            {view === 'films' && (
+              <input required placeholder="Video Link (Drive, YT, etc)" value={formData.videoUrl} onChange={e => setFormData({...formData, videoUrl: e.target.value})} />
+            )}
+
+            <textarea required placeholder="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} style={{gridColumn: '1 / -1', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px'}} rows="3" />
             
             <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
               <label><input type="checkbox" checked={formData.isFree} onChange={e => setFormData({...formData, isFree: e.target.checked})}/> Is Free?</label>
               <label><input type="checkbox" checked={formData.published} onChange={e => setFormData({...formData, published: e.target.checked})}/> Initially Published?</label>
             </div>
-            <button type="submit" className="btn-primary" style={{gridColumn: '1 / -1'}}>Add Content</button>
+            <button type="submit" className="btn-primary" style={{gridColumn: '1 / -1'}}>Deploy {view === 'films' ? 'Film' : 'Series Shell'}</button>
           </form>
         </div>
       )}
 
-      <div className="admin-card">
-        <h3>Deployed {view}</h3>
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Type</th>
-              <th>Access</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map(item => (
-              <tr key={item.id}>
-                <td>{item.title}</td>
-                <td><span className="badge">{item.type}</span></td>
-                <td>{item.isFree ? <span className="badge badge-approved">Free</span> : <span className="badge badge-pending">Premium</span>}</td>
-                <td>{item.published ? <span className="badge badge-approved">Public</span> : <span className="badge badge-declined">Hidden</span>}</td>
-                <td>
-                  {canHide && (
-                    <>
-                      <button className="btn-secondary" style={{padding: '0.2rem 0.6rem', fontSize: '0.8rem', marginRight: '0.5rem'}} onClick={() => togglePublish(item)}>
-                        {item.published ? 'Hide' : 'Publish'}
-                      </button>
-                      <button className="btn-secondary" style={{padding: '0.2rem 0.6rem', fontSize: '0.8rem', color: 'var(--color-red)', borderColor: 'var(--color-red)'}} onClick={() => handleDelete(item.id)}>Delete</button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Dynamic Episode Addition Form ONLY shows in 'products' or 'series' view if activeSeries is set */}
+      {activeSeries && canDeploy && (
+        <div className="admin-card" style={{border: '1px solid var(--color-gold)', animation: 'slideUpFade 0.3s ease', marginBottom: '2rem'}}>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <h3 style={{color: 'var(--color-gold)'}}>Adding Episode to: {activeSeries.title}</h3>
+            <button className="btn-secondary" type="button" onClick={() => setActiveSeries(null)} style={{padding: '0.2rem 0.5rem', fontSize:'0.8rem'}}>Cancel</button>
+          </div>
+          <form onSubmit={handleAddEpisodeSubmit} style={{marginTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
+            <input required placeholder="Episode Title" value={epFormData.title} onChange={e => setEpFormData({...epFormData, title: e.target.value})} />
+            <input placeholder="Duration (e.g. 45 min)" value={epFormData.duration} onChange={e => setEpFormData({...epFormData, duration: e.target.value})} />
+            <input required placeholder="Episode Thumbnail Link" value={epFormData.thumbnail} onChange={e => setEpFormData({...epFormData, thumbnail: e.target.value})} />
+            <input required placeholder="Episode Video Link (Drive, YT, etc)" value={epFormData.videoUrl} onChange={e => setEpFormData({...epFormData, videoUrl: e.target.value})} />
+            <textarea placeholder="Episode Description" value={epFormData.description} onChange={e => setEpFormData({...epFormData, description: e.target.value})} style={{gridColumn: '1 / -1', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px'}} rows="2" />
+            <button type="submit" className="btn-primary" style={{gridColumn: '1 / -1'}}>Upload Episode</button>
+          </form>
+        </div>
+      )}
+
+      {view === 'products' && (
+        <>
+          {renderTable(items, "Deployed Films", "films")}
+          {renderTable(seriesItems, "Deployed Series", "series")}
+        </>
+      )}
+
     </div>
   );
 }

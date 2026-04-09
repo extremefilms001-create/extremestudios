@@ -34,23 +34,23 @@ service cloud.firestore {
 
     // Content: Films, Series
     match /films/{filmId} {
-      // Public can read published. Admins can read/write all.
       allow read: if (resource.data.published == true) || isAdmin();
+      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']) || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'likes', 'dislikes', 'likedBy', 'dislikedBy']));
       allow write: if isAdmin();
     }
     
     match /series/{seriesId} {
       allow read: if (resource.data.published == true) || isAdmin();
+      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']) || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'likes', 'dislikes', 'likedBy', 'dislikedBy']));
       allow write: if isAdmin();
     }
 
     // Transactions (Payments made by users to access content)
     match /transactions/{transactionId} {
-      // User can create their own transaction. User can read their own.
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      // Only certain admins (Financial Manager, Assistant, Top Admins) can update it. For now allow any admin.
-      allow update, delete: if isAdmin();
+      // Only certain admins (Financial Manager, Assistant, Top Admins) can update it
+      allow update, delete: if isTopAdmin() || (isAdmin() && getUserData().role in ['FINANCIAL MANAGER', 'ASSISTANT FINANCIAL MANAGER']);
     }
 
     // Contributions, Projects, Announcements

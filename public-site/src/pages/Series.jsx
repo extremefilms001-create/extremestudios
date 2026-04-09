@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, doc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { useAlert } from '../contexts/AlertContext';
 import './Content.css';
 
@@ -15,9 +15,34 @@ function Series() {
   const [txId, setTxId] = useState('');
   const [payFirst, setPayFirst] = useState('');
   const [payLast, setPayLast] = useState('');
+  const [payEmail, setPayEmail] = useState('');
+  const [channel, setChannel] = useState('MTN MoMo');
+  const [amount, setAmount] = useState('');
   const [paymentMsg, setPaymentMsg] = useState('');
   
   const { currentUser, userData } = useAuth();
+
+  // Helper to convert raw links into iframe-friendly embed links
+  const getEmbedUrl = (url) => {
+    if (!url) return '';
+    try {
+      if (url.includes('youtube.com/watch')) {
+        const v = new URL(url).searchParams.get('v');
+        return v ? `https://www.youtube.com/embed/${v}` : url;
+      }
+      if (url.includes('youtu.be/')) {
+        const v = url.split('youtu.be/')[1]?.split('?')[0];
+        return v ? `https://www.youtube.com/embed/${v}` : url;
+      }
+      if (url.includes('drive.google.com') && url.includes('/view')) {
+        return url.split('/view')[0] + '/preview';
+      }
+      if (url.includes('mega.nz/file/')) {
+        return url.replace('/file/', '/embed/');
+      }
+    } catch(e) {}
+    return url; // fallback to raw string
+  };
 
   useEffect(() => {
     async function fetchSeries() {
@@ -28,9 +53,29 @@ function Series() {
     fetchSeries();
   }, []);
 
+  // View Counter Timer
+  useEffect(() => {
+    let timer;
+    if (selectedSeries) {
+       const hasAccess = selectedSeries.isFree || (userData?.access && userData.access.includes(selectedSeries.id)) || (userData?.role && userData.role !== 'user');
+       if (hasAccess && selectedSeries.type !== 'Upcoming' && activeEpisode) {
+           timer = setTimeout(async () => {
+               try {
+                 await updateDoc(doc(db, 'series', selectedSeries.id), {
+                    views: increment(1)
+                 });
+               } catch (e) {
+                 console.error("View tracking error:", e);
+               }
+           }, 10000); // 10 seconds
+       }
+    }
+    return () => clearTimeout(timer);
+  }, [selectedSeries, activeEpisode, userData]);
+
   const handleSelect = (s) => {
-    if (!currentUser) {
-      showAlert("Please log in or sign up first to access this content.", "error");
+    if (!currentUser && !s.isFree) {
+      showAlert("Please log in or sign up first to access premium content.", "error");
       return;
     }
     setSelectedSeries(s);
@@ -41,29 +86,94 @@ function Series() {
   };
 
   const handleClose = () => {
-    setSelectedSeries(null); ActiveEpisode(null);
+    setSelectedSeries(null); setActiveEpisode(null);
+  };
+
+  const handleInteraction = async (type) => {
+    if (!currentUser) return showAlert("Please log in to react to series.", "error");
+
+    const ref = doc(db, 'series', selectedSeries.id);
+    const hasLiked = selectedSeries.likedBy?.includes(currentUser.uid);
+    const hasDisliked = selectedSeries.dislikedBy?.includes(currentUser.uid);
+    
+    try {
+        if (type === 'like') {
+            if (hasLiked) return;
+            let updates = { likes: increment(1), likedBy: arrayUnion(currentUser.uid) };
+            if (hasDisliked) {
+                updates.dislikes = increment(-1);
+                updates.dislikedBy = arrayRemove(currentUser.uid);
+            }
+            await updateDoc(ref, updates);
+            setSelectedSeries({...selectedSeries, 
+                likedBy: [...(selectedSeries.likedBy||[]), currentUser.uid], 
+                dislikedBy: (selectedSeries.dislikedBy||[]).filter(id=>id!==currentUser.uid), 
+                likes: (selectedSeries.likes||0)+1, 
+                dislikes: hasDisliked ? ((selectedSeries.dislikes||1)-1) : (selectedSeries.dislikes||0) 
+            });
+        } else {
+            if (hasDisliked) return;
+            let updates = { dislikes: increment(1), dislikedBy: arrayUnion(currentUser.uid) };
+            if (hasLiked) {
+                updates.likes = increment(-1);
+                updates.likedBy = arrayRemove(currentUser.uid);
+            }
+            await updateDoc(ref, updates);
+            setSelectedSeries({...selectedSeries, 
+                dislikedBy: [...(selectedSeries.dislikedBy||[]), currentUser.uid], 
+                likedBy: (selectedSeries.likedBy||[]).filter(id=>id!==currentUser.uid), 
+                dislikes: (selectedSeries.dislikes||0)+1, 
+                likes: hasLiked ? ((selectedSeries.likes||1)-1) : (selectedSeries.likes||0) 
+            });
+        }
+    } catch(err) {
+        console.error(err);
+        showAlert("Failed to record your reaction.", "error");
+    }
   };
 
   const submitPayment = async (e) => {
     e.preventDefault();
+    
+    const cleanTxId = txId.trim();
+    if (!/^\d+$/.test(cleanTxId)) {
+      setPaymentMsg('TxID must contain strictly numbers.');
+      return;
+    }
+    if (cleanTxId.length < 11) {
+      setPaymentMsg('TxID must be at least 11 digits long.');
+      return;
+    }
+
     try {
+      const q = query(collection(db, 'transactions'), where('txId', '==', cleanTxId));
+      const existingSnaps = await getDocs(q);
+      const isUsed = existingSnaps.docs.some(d => d.data().status !== 'declined');
+      
+      if (isUsed) {
+        setPaymentMsg('This TxID is already in use or pending! Cannot be reused.');
+        return;
+      }
+
       await addDoc(collection(db, 'transactions'), {
         userId: currentUser.uid,
-        userName: `${userData?.firstName} ${userData?.lastName}`,
-        payeeFirstName: payFirst,
-        payeeLastName: payLast,
-        txId,
+        userName: `${payFirst} ${payLast}`,
+        userEmail: payEmail,
+        channel,
+        amount: Number(amount) || 0,
+        txId: cleanTxId,
         contentId: selectedSeries.id,
         contentTitle: selectedSeries.title,
-        status: 'approved',
+        status: 'pending',
         createdAt: new Date().toISOString()
       });
       await updateDoc(doc(db, 'users', currentUser.uid), {
         access: arrayUnion(selectedSeries.id)
       });
-      setPaymentMsg('Payment submitted successfully! Unlocking content...');
-      setTxId(''); setPayFirst(''); setPayLast('');
+      setPaymentMsg('Transaction recorded successfully! Unlocking content...');
+      setTxId(''); setPayFirst(''); setPayLast(''); setPayEmail(''); setAmount('');
     } catch (err) {
+      console.error(err);
       setPaymentMsg('Failed to submit, try again. ' + err.message);
     }
   };
@@ -97,7 +207,6 @@ function Series() {
           <div className={`modal-content glass ${selectedSeries.type !== 'Upcoming' && (selectedSeries.isFree || (userData?.access && userData.access.includes(selectedSeries.id)) || userData?.role !== 'user') ? 'video-modal' : 'payment-modal'}`}>
             <span className="close-btn" onClick={handleClose}>&times;</span>
             
-            {/* If Upcoming */}
             {selectedSeries.type === 'Upcoming' ? (
               <div className="upcoming-view flex-center">
                 <h2>{selectedSeries.title}</h2>
@@ -105,14 +214,13 @@ function Series() {
                 <div className="countdown">[Countdown Placeholder]</div>
               </div>
             ) : 
-            /* If Accessible (Free or unlocked) */
             (selectedSeries.isFree || (userData?.access && userData.access.includes(selectedSeries.id)) || (userData?.role && userData.role !== 'user')) ? (
               <div className="series-player-layout">
                 <div className="series-video-area">
                   {activeEpisode ? (
                     <>
                       <iframe 
-                        src={activeEpisode.videoUrl} 
+                        src={getEmbedUrl(activeEpisode.videoUrl)} 
                         title={activeEpisode.title}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowFullScreen
@@ -120,6 +228,14 @@ function Series() {
                       <div className="video-info">
                         <h2>{activeEpisode.title}</h2>
                         <p>{activeEpisode.description}</p>
+                        <div className="interactions" style={{marginTop: '1rem', display: 'flex', gap: '1rem'}}>
+                          <button className="btn-secondary" onClick={() => handleInteraction('like')} style={{color: selectedSeries.likedBy?.includes(currentUser?.uid) ? '#00ff00' : 'var(--color-white)', borderColor: selectedSeries.likedBy?.includes(currentUser?.uid) ? '#00ff00' : 'var(--color-white-muted)'}}>
+                             👍 {(selectedSeries.likes || 0)}
+                          </button>
+                          <button className="btn-secondary" onClick={() => handleInteraction('dislike')} style={{color: selectedSeries.dislikedBy?.includes(currentUser?.uid) ? 'var(--color-red)' : 'var(--color-white)', borderColor: selectedSeries.dislikedBy?.includes(currentUser?.uid) ? 'var(--color-red)' : 'var(--color-white-muted)'}}>
+                             👎 {(selectedSeries.dislikes || 0)}
+                          </button>
+                        </div>
                       </div>
                     </>
                   ) : (
@@ -144,7 +260,6 @@ function Series() {
                 </div>
               </div>
             ) : 
-            /* If Requires Payment */
             (
               <div className="payment-view">
                 <h2 className="text-gradient">Unlock Content</h2>
@@ -156,16 +271,35 @@ function Series() {
                 <form onSubmit={submitPayment} className="auth-form mt-2">
                   <div className="form-group">
                     <label>TxID (Transaction ID)</label>
-                    <input required value={txId} onChange={e => setTxId(e.target.value)} />
+                    <input required value={txId} onChange={e => setTxId(e.target.value)} placeholder="e.g. 11-digit code" />
                   </div>
                   <div className="form-row">
                     <div className="form-group half">
-                      <label>Payee First Name</label>
+                      <label>First Name</label>
                       <input required value={payFirst} onChange={e => setPayFirst(e.target.value)} />
                     </div>
                     <div className="form-group half">
-                      <label>Payee Last Name</label>
+                      <label>Last Name</label>
                       <input required value={payLast} onChange={e => setPayLast(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                      <label>Email</label>
+                      <input required type="email" value={payEmail} onChange={e => setPayEmail(e.target.value)} />
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group half">
+                      <label>Channel</label>
+                      <select value={channel} onChange={e => setChannel(e.target.value)} style={{background: 'rgba(255,255,255,0.05)', color: 'white', padding: '0.8rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius:'6px'}}>
+                        <option value="MTN MoMo">MTN MoMo</option>
+                        <option value="Airtel Money">Airtel Money</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cash">Cash / Other</option>
+                      </select>
+                    </div>
+                    <div className="form-group half">
+                      <label>Amount (RWF)</label>
+                      <input required type="number" value={amount} onChange={e => setAmount(e.target.value)} />
                     </div>
                   </div>
                   <button type="submit" className="btn-primary auth-submit">Verify Payment</button>
