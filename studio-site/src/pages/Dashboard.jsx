@@ -117,7 +117,8 @@ function Dashboard() {
         </tbody>
       </table>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="admin-dashboard">

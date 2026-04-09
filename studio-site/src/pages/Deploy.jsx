@@ -162,7 +162,8 @@ function Deploy() {
         </tbody>
       </table>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="admin-deploy">
