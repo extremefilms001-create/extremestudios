@@ -8,6 +8,7 @@ import './Content.css';
 
 function Films() {
   const [films, setFilms] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilm, setSelectedFilm] = useState(null);
@@ -16,9 +17,11 @@ function Films() {
 
   useEffect(() => {
     async function fetchFilms() {
+      setLoading(true);
       const q = query(collection(db, 'films'), where('published', '==', true));
       const snap = await getDocs(q);
       setFilms(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
     }
     fetchFilms();
   }, []);
@@ -70,7 +73,9 @@ function Films() {
         </div>
 
         <div className="grid-feed">
-          {filteredFilms.length > 0 ? filteredFilms.map(film => (
+          {loading ? (
+             <p className="empty-state">Loading films...</p>
+          ) : filteredFilms.length > 0 ? filteredFilms.map(film => (
             <div key={film.id} className="feed-card" onClick={() => handleSelect(film)}>
               <div className="card-image" style={{ backgroundImage: `url(${film.thumbnail})` }}>
                 {film.type === 'Upcoming' && <div className="upcoming-tag">Upcoming</div>}

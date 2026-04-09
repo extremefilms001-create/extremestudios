@@ -9,13 +9,14 @@ import { useAlert } from '../contexts/AlertContext';
 
 function Home() {
   const [scrollY, setScrollY] = useState(0);
+  const [loading, setLoading] = useState(true);
   
+  const [mostLikedContent, setMostLikedContent] = useState([]);
+  const [trendingContent, setTrendingContent] = useState([]);
   const [recentFilms, setRecentFilms] = useState([]);
   const [recentSeries, setRecentSeries] = useState([]);
-  
   const [popularFilms, setPopularFilms] = useState([]);
   const [popularSeries, setPopularSeries] = useState([]);
-  const [mostLiked, setMostLiked] = useState([]);
   
   const [viewingItem, setViewingItem] = useState(null);
 
@@ -39,6 +40,7 @@ function Home() {
   useEffect(() => {
     async function fetchAllContent() {
       try {
+        setLoading(true);
         const filmsRef = collection(db, 'films');
         const qFilms = query(filmsRef, where('published', '==', true));
         const qfSnap = await getDocs(qFilms);
@@ -49,23 +51,29 @@ function Home() {
         const qsSnap = await getDocs(qSeries);
         const allSeries = qsSnap.docs.map(d => ({ id: d.id, _type: 'series', ...d.data() }));
 
-        // Standard sorting
+        // 1. Most liked movies (Combines Films and Series)
+        const combinedLiked = [...allFilms, ...allSeries].sort((a,b) => (b.likes || 0) - (a.likes || 0));
+        setMostLikedContent(combinedLiked.slice(0, 4));
+
+        // 2. Trending Movies (Combines Films and Series, sorted by views)
+        const combinedTrending = [...allFilms, ...allSeries].sort((a,b) => (b.views || 0) - (a.views || 0));
+        setTrendingContent(combinedTrending.slice(0, 4));
+
+        // 3. Recent Films (Feature and Short Films)
         const dateSortedFilms = [...allFilms].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-        const dateSortedSeries = [...allSeries].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-        
         setRecentFilms(dateSortedFilms.slice(0, 4));
+
+        // 4. Recent Shows (Series and Short Series)
+        const dateSortedSeries = [...allSeries].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         setRecentSeries(dateSortedSeries.slice(0, 4));
 
-        // Popular (Views)
+        // 5. Most Popular Film (Films with most views)
         const viewsSortedFilms = [...allFilms].sort((a,b) => (b.views || 0) - (a.views || 0));
-        const viewsSortedSeries = [...allSeries].sort((a,b) => (b.views || 0) - (a.views || 0));
-        
         setPopularFilms(viewsSortedFilms.slice(0, 4));
-        setPopularSeries(viewsSortedSeries.slice(0, 4));
 
-        // Most Liked (Combined)
-        const combinedLiked = [...allFilms, ...allSeries].sort((a,b) => (b.likes || 0) - (a.likes || 0));
-        setMostLiked(combinedLiked.slice(0, 4));
+        // 6. Most Popular Shows (Shows with most views)
+        const viewsSortedSeries = [...allSeries].sort((a,b) => (b.views || 0) - (a.views || 0));
+        setPopularSeries(viewsSortedSeries.slice(0, 4));
 
         // Branding
         const brandingRef = doc(db, 'site_settings', 'branding');
@@ -76,6 +84,8 @@ function Home() {
 
       } catch (e) {
         console.error('Error fetching content', e);
+      } finally {
+        setLoading(false);
       }
     }
     fetchAllContent();
@@ -150,11 +160,18 @@ function Home() {
       </section>
 
       <div className="content-sections container">
-        {renderCardRow("Most Liked Movies", mostLiked, "/films")}
-        {renderCardRow("Popular Feature Films", popularFilms, "/films?type=Feature Film", "film")}
-        {renderCardRow("Popular Series", popularSeries, "/series", "series")}
-        {renderCardRow("Recent Feature Films", recentFilms, "/films?type=Feature Film", "film")}
-        {renderCardRow("Recent Series", recentSeries, "/series", "series")}
+        {loading ? (
+             <p className="empty-state" style={{textAlign: 'center', marginTop: '2rem'}}>Loading content...</p>
+        ) : (
+          <>
+            {renderCardRow("Most Liked Movies", mostLikedContent, "/films")}
+            {renderCardRow("Trending Movies", trendingContent, "/films")}
+            {renderCardRow("Recent Films", recentFilms, "/films", "film")}
+            {renderCardRow("Recent Shows", recentSeries, "/series", "series")}
+            {renderCardRow("Most Popular Film", popularFilms, "/films", "film")}
+            {renderCardRow("Most Popular Shows", popularSeries, "/series", "series")}
+          </>
+        )}
       </div>
 
       {viewingItem && (

@@ -8,6 +8,7 @@ import './Content.css';
 
 function Series() {
   const [series, setSeries] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSeries, setSelectedSeries] = useState(null);
   const showAlert = useAlert();
@@ -15,9 +16,11 @@ function Series() {
 
   useEffect(() => {
     async function fetchSeries() {
+      setLoading(true);
       const q = query(collection(db, 'series'), where('published', '==', true));
       const snap = await getDocs(q);
       setSeries(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
     }
     fetchSeries();
   }, []);
@@ -54,7 +57,9 @@ function Series() {
         </div>
 
         <div className="grid-feed">
-          {filteredSeries.length > 0 ? filteredSeries.map(s => (
+          {loading ? (
+             <p className="empty-state">Loading series...</p>
+          ) : filteredSeries.length > 0 ? filteredSeries.map(s => (
             <div key={s.id} className="feed-card" onClick={() => handleSelect(s)}>
               <div className="card-image" style={{ backgroundImage: `url(${s.thumbnail})` }}>
                 {s.type === 'Upcoming' && <div className="upcoming-tag">Upcoming</div>}
