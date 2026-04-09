@@ -18,11 +18,14 @@ export function AuthProvider({ children }) {
   async function signup(email, password, additionalData) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    // Set user data in firestore
+    // Check if this is the CEO account
+    const isCEO = email.toLowerCase() === 'nadjibullahu@gmail.com';
+    
     await setDoc(doc(db, 'users', user.uid), {
       ...additionalData,
       email: email,
-      role: 'user', // default role
+      role: isCEO ? 'CEO' : 'user', // default role is user, but CEO gets promoted
+      approved: isCEO ? true : false,
       createdAt: new Date().toISOString()
     });
     return user;

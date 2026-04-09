@@ -4,8 +4,12 @@ const path = require('path');
 // NOTE: Use the service account JSON you just downloaded
 const serviceAccountPath = 'c:\\Users\\uwaba\\Downloads\\extremestudio-46b04006478c.json';
 
+const serviceAccount = require(serviceAccountPath);
+console.log('Using Project ID:', serviceAccount.project_id);
+
 admin.initializeApp({
-  credential: admin.credential.cert(require(serviceAccountPath))
+  credential: admin.credential.cert(serviceAccount),
+  projectId: serviceAccount.project_id
 });
 
 const auth = admin.auth();
