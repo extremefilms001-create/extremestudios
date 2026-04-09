@@ -15,7 +15,10 @@ function Settings() {
   const [branding, setBranding] = useState({ 
     headerTitle: 'EXTREME STUDIOS', 
     footerTitle: 'EXTREME STUDIOS', 
-    footerAbout: 'We are a passionate creative team dedicated to bringing your vision to life through high-quality visual storytelling. Whether we are capturing a special event, producing a commercial project, or shooting a creative film, we put our skills and energy into every single frame.' 
+    footerAbout: 'We are a passionate creative team dedicated to bringing your vision to life through high-quality visual storytelling. Whether we are capturing a special event, producing a commercial project, or shooting a creative film, we put our skills and energy into every single frame.',
+    heroTitleBold: 'CAPTURE',
+    heroTitleNormal: 'REAL MOMENTS',
+    heroSubtitle: 'Welcome to Extreme Studios. We are dedicated to bringing your vision to life through high-quality visual storytelling. Let us capture your story, frame by frame.'
   });
   const [saveStatus, setSaveStatus] = useState('');
 
@@ -89,6 +92,28 @@ function Settings() {
                   value={branding.footerTitle} 
                   onChange={e => setBranding({...branding, footerTitle: e.target.value})} 
                   placeholder="EXTREME STUDIOS" 
+                />
+              </div>
+              <div className="form-group">
+                <label>Hero Bold Text (e.g. CAPTURE)</label>
+                <input 
+                  value={branding.heroTitleBold} 
+                  onChange={e => setBranding({...branding, heroTitleBold: e.target.value})} 
+                />
+              </div>
+              <div className="form-group">
+                <label>Hero Normal Text (e.g. REAL MOMENTS)</label>
+                <input 
+                  value={branding.heroTitleNormal} 
+                  onChange={e => setBranding({...branding, heroTitleNormal: e.target.value})} 
+                />
+              </div>
+              <div className="form-group">
+                <label>Hero Subtitle Text</label>
+                <textarea 
+                  value={branding.heroSubtitle} 
+                  onChange={e => setBranding({...branding, heroSubtitle: e.target.value})} 
+                  rows={3}
                 />
               </div>
               <div className="form-group">

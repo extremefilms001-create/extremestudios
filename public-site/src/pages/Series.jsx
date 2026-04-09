@@ -229,11 +229,13 @@ function Series() {
                         <h2>{activeEpisode.title}</h2>
                         <p>{activeEpisode.description}</p>
                         <div className="interactions" style={{marginTop: '1rem', display: 'flex', gap: '1rem'}}>
-                          <button className="btn-secondary" onClick={() => handleInteraction('like')} style={{color: selectedSeries.likedBy?.includes(currentUser?.uid) ? '#00ff00' : 'var(--color-white)', borderColor: selectedSeries.likedBy?.includes(currentUser?.uid) ? '#00ff00' : 'var(--color-white-muted)'}}>
-                             👍 {(selectedSeries.likes || 0)}
+                          <button className="btn-secondary" onClick={() => handleInteraction('like')} style={{color: selectedSeries.likedBy?.includes(currentUser?.uid) ? '#00ff00' : 'var(--color-white)', borderColor: selectedSeries.likedBy?.includes(currentUser?.uid) ? '#00ff00' : 'var(--color-white-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
+                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> 
+                             {(selectedSeries.likes || 0)}
                           </button>
-                          <button className="btn-secondary" onClick={() => handleInteraction('dislike')} style={{color: selectedSeries.dislikedBy?.includes(currentUser?.uid) ? 'var(--color-red)' : 'var(--color-white)', borderColor: selectedSeries.dislikedBy?.includes(currentUser?.uid) ? 'var(--color-red)' : 'var(--color-white-muted)'}}>
-                             👎 {(selectedSeries.dislikes || 0)}
+                          <button className="btn-secondary" onClick={() => handleInteraction('dislike')} style={{color: selectedSeries.dislikedBy?.includes(currentUser?.uid) ? 'var(--color-red)' : 'var(--color-white)', borderColor: selectedSeries.dislikedBy?.includes(currentUser?.uid) ? 'var(--color-red)' : 'var(--color-white-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
+                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path></svg> 
+                             {(selectedSeries.dislikes || 0)}
                           </button>
                         </div>
                       </div>
@@ -263,6 +265,9 @@ function Series() {
             (
               <div className="payment-view">
                 <h2 className="text-gradient">Unlock Content</h2>
+                <div style={{marginBottom: '1rem', marginTop: '0.5rem'}}>
+                   <span className="price-tag premium" style={{fontSize: '1.2rem', padding: '0.4rem 1rem'}}>{selectedSeries.price ? `Price: ${selectedSeries.price} RWF` : 'Premium Content'}</span>
+                </div>
                 <p>"{selectedSeries.title}" is a premium series.</p>
                 <p className="payment-instructions">Please send the money to the studio's numbers via MoMo, and enter the transaction details below to get access.</p>
                 

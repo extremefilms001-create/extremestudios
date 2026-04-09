@@ -2,12 +2,17 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Home.css';
 import { db } from '../firebase';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 
 function Home() {
   const [scrollY, setScrollY] = useState(0);
   const [recentFilms, setRecentFilms] = useState([]);
   const [recentSeries, setRecentSeries] = useState([]);
+  const [branding, setBranding] = useState({
+    heroTitleBold: 'CAPTURE',
+    heroTitleNormal: 'REAL MOMENTS',
+    heroSubtitle: 'Welcome to Extreme Studios. We are dedicated to bringing your vision to life through high-quality visual storytelling. Let us capture your story, frame by frame.'
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,6 +34,13 @@ function Home() {
         const qSeries = query(seriesRef, where('published', '==', true), limit(4));
         const qsSnap = await getDocs(qSeries);
         setRecentSeries(qsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+        const brandingRef = doc(db, 'site_settings', 'branding');
+        const bSnap = await getDoc(brandingRef);
+        if (bSnap.exists() && bSnap.data().heroTitleBold) {
+            setBranding(prev => ({...prev, ...bSnap.data()}));
+        }
+
       } catch (e) {
         console.error('Error fetching content', e);
       }
@@ -45,10 +57,10 @@ function Home() {
       <section className="hero-section" style={{ opacity: heroOpacity, transform: `translateY(${scrollY * 0.5}px)` }}>
         <div className="hero-content fade-in">
           <h1 className="hero-title">
-            <span className="text-gradient">CAPTURE</span> REAL MOMENTS
+            <span className="text-gradient">{branding.heroTitleBold}</span> {branding.heroTitleNormal}
           </h1>
           <p className="hero-subtitle">
-            Welcome to Extreme Studios. We are dedicated to bringing your vision to life through high-quality visual storytelling. Let us capture your story, frame by frame.
+            {branding.heroSubtitle}
           </p>
           <div className="hero-actions">
             <Link to="/films" className="btn-primary">Explore Films</Link>

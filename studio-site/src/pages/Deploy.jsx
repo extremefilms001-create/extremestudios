@@ -10,7 +10,7 @@ function Deploy() {
   const [items, setItems] = useState([]);
   const [seriesItems, setSeriesItems] = useState([]);
   const [view, setView] = useState('products'); // films, series, products
-  const [formData, setFormData] = useState({ title: '', type: 'Feature Film', description: '', thumbnail: '', videoUrl: '', isFree: true, published: true });
+  const [formData, setFormData] = useState({ title: '', type: 'Feature Film', description: '', thumbnail: '', videoUrl: '', isFree: true, published: true, price: '' });
   
   // Episode state
   const [activeSeries, setActiveSeries] = useState(null);
@@ -47,6 +47,7 @@ function Deploy() {
         thumbnail: formData.thumbnail,
         isFree: formData.isFree,
         published: formData.published,
+        price: formData.isFree ? 0 : Number(formData.price),
         views: 0,
         likes: 0,
         dislikes: 0,
@@ -62,7 +63,7 @@ function Deploy() {
       }
 
       await addDoc(collection(db, view), baseData);
-      setFormData({ title: '', type: view === 'films' ? 'Feature Film' : 'Series', description: '', thumbnail: '', videoUrl: '', isFree: true, published: true });
+      setFormData({ title: '', type: view === 'films' ? 'Feature Film' : 'Series', description: '', thumbnail: '', videoUrl: '', isFree: true, published: true, price: '' });
       loadItems();
       showAlert('Content Deployed Successfully!', 'success');
     } catch(err) {
@@ -175,7 +176,11 @@ function Deploy() {
                 <option value="Upcoming">Upcoming</option>
               </select>
             ) : (
-              <input required placeholder="Series Type/Genre" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} />
+              <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
+                <option value="Series">Series</option>
+                <option value="Short Serie">Short Serie</option>
+                <option value="Upcoming">Upcoming</option>
+              </select>
             )}
 
             <input required placeholder="General Thumbnail Link" value={formData.thumbnail} onChange={e => setFormData({...formData, thumbnail: e.target.value})} />
@@ -190,6 +195,11 @@ function Deploy() {
               <label><input type="checkbox" checked={formData.isFree} onChange={e => setFormData({...formData, isFree: e.target.checked})}/> Is Free?</label>
               <label><input type="checkbox" checked={formData.published} onChange={e => setFormData({...formData, published: e.target.checked})}/> Initially Published?</label>
             </div>
+            
+            {!formData.isFree && (
+              <input type="number" required placeholder="Price (RWF)" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} style={{gridColumn: '1 / -1'}} />
+            )}
+            
             <button type="submit" className="btn-primary" style={{gridColumn: '1 / -1'}}>Deploy {view === 'films' ? 'Film' : 'Series Shell'}</button>
           </form>
         </div>
