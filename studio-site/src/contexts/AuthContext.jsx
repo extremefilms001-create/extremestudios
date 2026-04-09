@@ -19,11 +19,14 @@ export function AuthProvider({ children }) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     // Admins are unapproved by default when they sign up on the Studio side
+    // Check if this is the CEO account
+    const isCEO = email.toLowerCase() === 'nadjibullahu@gmail.com';
+    
     await setDoc(doc(db, 'users', user.uid), {
       ...additionalData,
       email: email,
-      role: 'pending_admin',
-      approved: false,
+      role: isCEO ? 'CEO' : 'pending_admin',
+      approved: isCEO ? true : false,
       createdAt: new Date().toISOString()
     });
     return user;
