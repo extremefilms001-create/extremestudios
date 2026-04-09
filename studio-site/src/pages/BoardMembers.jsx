@@ -15,6 +15,7 @@ function BoardMembers() {
   const { userData } = useAuth();
   const showAlert = useAlert();
   const [members, setMembers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const canManage = ['CEO', 'SECRETARY'].includes(userData?.role?.toUpperCase());
 
@@ -28,6 +29,13 @@ function BoardMembers() {
     const snap = await getDocs(q);
     setMembers(snap.docs.map(d => ({id: d.id, ...d.data()})));
   }
+
+  const filteredMembers = members.filter(m => 
+    m.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    m.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    m.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    m.role?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleApprove = async (id) => {
     if (!canManage) return showAlert('Unauthorized');
@@ -49,6 +57,15 @@ function BoardMembers() {
       </div>
 
       <div className="admin-card">
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem'}}>
+          <input 
+              type="text" 
+              placeholder="Search members by name, email, role..." 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+              style={{background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.4rem 1rem'}} 
+          />
+        </div>
         <table className="admin-table">
           <thead>
             <tr>
@@ -60,7 +77,7 @@ function BoardMembers() {
             </tr>
           </thead>
           <tbody>
-            {members.map(m => (
+            {filteredMembers.map(m => (
               <tr key={m.id}>
                 <td>{m.firstName} {m.lastName}</td>
                 <td>{m.email}</td>

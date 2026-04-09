@@ -8,6 +8,7 @@ function Transactions() {
   const { userData } = useAuth();
   const showAlert = useAlert();
   const [transactions, setTransactions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const canVerify = ['CEO', 'SECRETARY', 'FINANCIAL MANAGER', 'ASSISTANT FINANCIAL MANAGER'].includes(userData?.role?.toUpperCase());
 
@@ -23,6 +24,13 @@ function Transactions() {
     const snap = await getDocs(collection(db, 'transactions'));
     setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()})));
   }
+
+  const filteredTransactions = transactions.filter(t => 
+    t.userName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    t.userEmail?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    t.txId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.contentTitle?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleApprove = async (tx) => {
     if (!canVerify) return showAlert('Unauthorized');
@@ -66,6 +74,16 @@ function Transactions() {
       </div>
 
       <div className="admin-card">
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem'}}>
+          <h3 style={{margin: 0}}>Transaction Records</h3>
+          <input 
+              type="text" 
+              placeholder="Search by name, email, txid..." 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+              style={{background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.4rem 1rem'}} 
+          />
+        </div>
         <table className="admin-table">
           <thead>
             <tr>
@@ -80,7 +98,7 @@ function Transactions() {
             </tr>
           </thead>
           <tbody>
-            {transactions.map(tx => (
+            {filteredTransactions.map(tx => (
               <tr key={tx.id}>
                 <td>{new Date(tx.createdAt).toLocaleDateString()}</td>
                 <td>{tx.userName}<br/><span style={{fontSize: '0.75rem', color: 'var(--color-white-muted)'}}>{tx.userEmail}</span></td>

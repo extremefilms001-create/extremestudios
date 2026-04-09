@@ -10,6 +10,7 @@ function Deploy() {
   const [items, setItems] = useState([]);
   const [seriesItems, setSeriesItems] = useState([]);
   const [view, setView] = useState('products'); // films, series, products
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({ title: '', type: 'Feature Film', description: '', thumbnail: '', videoUrl: '', isFree: true, published: true, price: '' });
   
   // Episode state
@@ -104,9 +105,21 @@ function Deploy() {
   };
 
   // Render Table function
-  const renderTable = (data, title, typeLabel) => (
+  const renderTable = (data, title, typeLabel) => {
+    const filteredData = data.filter(item => item.title?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    return (
     <div className="admin-card" style={{marginBottom: '2rem'}}>
-      <h3>{title}</h3>
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem'}}>
+        <h3 style={{margin: 0}}>{title}</h3>
+        <input 
+            type="text" 
+            placeholder={`Search ${title.toLowerCase()}...`} 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)} 
+            style={{background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.4rem 1rem'}} 
+        />
+      </div>
       <table className="admin-table">
         <thead>
           <tr>
@@ -119,7 +132,7 @@ function Deploy() {
           </tr>
         </thead>
         <tbody>
-          {data.map(item => (
+          {filteredData.map(item => (
             <tr key={item.id}>
               <td>{item.title}</td>
               <td><span className="badge">{item.type}</span></td>
@@ -143,7 +156,7 @@ function Deploy() {
               </td>
             </tr>
           ))}
-          {data.length === 0 && (
+          {filteredData.length === 0 && (
             <tr><td colSpan="6" style={{textAlign: 'center', padding: '1rem', color: 'var(--color-white-muted)'}}>No content found.</td></tr>
           )}
         </tbody>

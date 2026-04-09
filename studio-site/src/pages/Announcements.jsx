@@ -8,6 +8,7 @@ function Announcements() {
   const { userData } = useAuth();
   const showAlert = useAlert();
   const [announcements, setAnnouncements] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({ title: '', content: '' });
   
   const canPost = ['CEO', 'SECRETARY', 'PRESIDENT', 'MANAGING DIRECTOR'].includes(userData?.role?.toUpperCase());
@@ -22,6 +23,11 @@ function Announcements() {
     const items = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
     setAnnouncements(items);
   }
+
+  const filteredAnnouncements = announcements.filter(a => 
+    a.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    a.content?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handlePost = async (e) => {
     e.preventDefault();
@@ -46,8 +52,15 @@ function Announcements() {
 
   return (
     <div className="admin-announcements">
-      <div className="admin-page-header">
+      <div className="admin-page-header" style={{display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem'}}>
         <h1 className="text-gradient">Board Announcements</h1>
+        <input 
+            type="text" 
+            placeholder="Search announcements..." 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)} 
+            style={{background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.4rem 1rem'}} 
+        />
       </div>
 
       {canPost && (
@@ -62,7 +75,7 @@ function Announcements() {
       )}
 
       <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
-        {announcements.map(ann => (
+        {filteredAnnouncements.map(ann => (
           <div key={ann.id} className="admin-card" style={{position: 'relative'}}>
             {canPost && <button className="close-btn" style={{position: 'absolute', top: '10px', right: '10px'}} onClick={() => handleDelete(ann.id)}>&times;</button>}
             <h3 style={{color: 'var(--color-gold)', marginBottom: '0.5rem'}}>{ann.title}</h3>

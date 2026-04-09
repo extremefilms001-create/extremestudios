@@ -9,7 +9,15 @@ function Payments() {
   const showAlert = useAlert();
   const [contributions, setContributions] = useState([]);
   const [admins, setAdmins] = useState([]);
-  const [formData, setFormData] = useState({ txId: '', amount: '10000', month: new Date().toLocaleString('default', { month: 'long' }) });
+  const currentYear = new Date().getFullYear().toString();
+  const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+  const [formData, setFormData] = useState({ txId: '', amount: '10000', month: currentMonth, year: currentYear });
+  
+  // Tracking Filter States
+  const [trackerMonth, setTrackerMonth] = useState(currentMonth);
+  const [trackerYear, setTrackerYear] = useState(currentYear);
+  const [statusFilter, setStatusFilter] = useState('All'); // All, Missed, Paid, Partially Paid
+  const [baselineAmount, setBaselineAmount] = useState(10000);
   
   const canVerify = ['CEO', 'SECRETARY', 'FINANCIAL MANAGER', 'ASSISTANT FINANCIAL MANAGER'].includes(userData?.role?.toUpperCase());
 
@@ -39,6 +47,7 @@ function Payments() {
         txId: formData.txId,
         amount: Number(formData.amount),
         month: formData.month,
+        year: formData.year,
         status: 'pending',
         createdAt: new Date().toISOString()
       });
@@ -60,9 +69,23 @@ function Payments() {
   const totalPending = contributions.filter(c => c.status === 'pending').reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
   const totalDeclined = contributions.filter(c => c.status === 'declined').reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
 
-  // Unpaid Admins for selected month
-  const currentMonthContributions = contributions.filter(c => c.month === formData.month && c.status === 'approved');
-  const unpaidAdmins = admins.filter(admin => !currentMonthContributions.some(c => c.adminId === admin.id));
+  // Unpaid Admins logic adapted for strict year/month mapping
+  const trackedAdmins = admins.map(admin => {
+    // We check month, and strictly matching year (or if year is absent on legacy records, we assume currentYear to preserve functionality).
+    const adminContribs = contributions.filter(c => 
+      c.adminId === admin.id && 
+      c.status === 'approved' && 
+      c.month === trackerMonth && 
+      (c.year === trackerYear || (!c.year && trackerYear === currentYear))
+    );
+    const totalPaid = adminContribs.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+    
+    let status = 'Missed';
+    if (totalPaid >= baselineAmount) status = 'Paid';
+    else if (totalPaid > 0) status = 'Partially Paid';
+    
+    return { ...admin, totalPaid, paymentStatus: status };
+  }).filter(a => statusFilter === 'All' || a.paymentStatus === statusFilter);
 
   return (
     <div className="admin-payments">
@@ -96,21 +119,47 @@ function Payments() {
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
+            <input required type="number" placeholder="Year" value={formData.year} onChange={e => setFormData({...formData, year: e.target.value})} style={{flex: 0.5}} />
             <button type="submit" className="btn-primary" style={{flex: 1}}>Submit</button>
           </form>
           {canVerify && <p style={{fontSize: '0.8rem', color: 'var(--color-gold)', marginTop: '0.5rem'}}>* As a financial verifier, you can adjust the contribution baseline amount.</p>}
         </div>
 
         <div className="admin-card" style={{flex: 1}}>
-          <h3>Unpaid for {formData.month}</h3>
-          <ul style={{listStyle: 'none', padding: 0, marginTop: '1rem'}}>
-            {unpaidAdmins.map(admin => (
-              <li key={admin.id} style={{padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
-                {admin.firstName} {admin.lastName} <br/>
-                <span style={{fontSize: '0.75rem', color: 'var(--color-white-muted)'}}>{admin.role}</span>
+          <h3>Admin Payment Tracker</h3>
+          <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem'}}>
+             <select value={trackerMonth} onChange={e => setTrackerMonth(e.target.value)} style={{flex: 1, padding: '0.4rem'}}>
+               {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(m => <option key={m} value={m}>{m}</option>)}
+             </select>
+             <input type="number" value={trackerYear} onChange={e => setTrackerYear(e.target.value)} style={{flex: 0.5, padding: '0.4rem'}} placeholder="Year" />
+          </div>
+          <div style={{display: 'flex', gap: '0.5rem', marginTop: '0.5rem'}}>
+             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{flex: 1, padding: '0.4rem'}}>
+                <option value="All">All Admins</option>
+                <option value="Missed">Missed Payment</option>
+                <option value="Paid">Fully Paid</option>
+                <option value="Partially Paid">Partially Paid</option>
+             </select>
+             {canVerify && (
+               <input type="number" placeholder="Baseline" value={baselineAmount} onChange={e => setBaselineAmount(Number(e.target.value))} style={{flex: 1, padding: '0.4rem'}} title="Baseline Expected Amount" />
+             )}
+          </div>
+          <ul style={{listStyle: 'none', padding: 0, marginTop: '1rem', maxHeight: '250px', overflowY: 'auto'}}>
+            {trackedAdmins.map(admin => (
+              <li key={admin.id} style={{padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between'}}>
+                <div>
+                  {admin.firstName} {admin.lastName} <br/>
+                  <span style={{fontSize: '0.75rem', color: 'var(--color-white-muted)'}}>{admin.role}</span>
+                </div>
+                <div style={{textAlign: 'right'}}>
+                  <span className={`badge ${admin.paymentStatus === 'Paid' ? 'badge-approved' : admin.paymentStatus === 'Missed' ? 'badge-declined' : 'badge-pending'}`}>
+                    {admin.paymentStatus}
+                  </span>
+                  {admin.paymentStatus === 'Partially Paid' && <div style={{fontSize: '0.75rem', color: 'var(--color-gold)', marginTop: '0.2rem'}}>{admin.totalPaid} / {baselineAmount}</div>}
+                </div>
               </li>
             ))}
-            {unpaidAdmins.length === 0 && <li style={{color: '#00ff00'}}>All admins have paid!</li>}
+            {trackedAdmins.length === 0 && <li style={{color: 'var(--color-white-muted)'}}>No admins match this filter!</li>}
           </ul>
         </div>
       </div>
@@ -134,7 +183,7 @@ function Payments() {
               <tr key={c.id}>
                 <td>{new Date(c.createdAt).toLocaleDateString()}</td>
                 <td>{c.adminName} <br/><span style={{fontSize:'0.75rem', color:'var(--color-white-muted)'}}>{c.adminRole}</span></td>
-                <td>{c.month}</td>
+                <td>{c.month} {c.year || ''}</td>
                 <td>{c.amount} RWF</td>
                 <td style={{fontFamily: 'monospace'}}>{c.txId}</td>
                 <td><span className={`badge badge-${c.status}`}>{c.status.toUpperCase()}</span></td>

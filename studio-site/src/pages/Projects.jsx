@@ -8,6 +8,7 @@ function Projects() {
   const { userData } = useAuth();
   const showAlert = useAlert();
   const [projects, setProjects] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [newProject, setNewProject] = useState({ name: '', milestoneTitle: '' });
   
   const canManage = ['CEO', 'SECRETARY', 'PRESIDENT', 'PROJECT MANAGER', 'ASS. PROJECT MANAGER', 'CREATIVE MANAGER'].includes(userData?.role?.toUpperCase());
@@ -20,6 +21,8 @@ function Projects() {
     const snap = await getDocs(collection(db, 'projects'));
     setProjects(snap.docs.map(d => ({id: d.id, ...d.data()})));
   }
+
+  const filteredProjects = projects.filter(p => p.name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleAddProject = async (e) => {
     e.preventDefault();
@@ -59,8 +62,15 @@ function Projects() {
 
   return (
     <div className="admin-projects">
-      <div className="admin-page-header">
+      <div className="admin-page-header" style={{display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem'}}>
         <h1 className="text-gradient">Project Tracking</h1>
+        <input 
+            type="text" 
+            placeholder="Search projects..." 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)} 
+            style={{background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.4rem 1rem'}} 
+        />
       </div>
 
       {canManage && (
@@ -75,7 +85,7 @@ function Projects() {
       )}
 
       <div className="projects-grid" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem'}}>
-        {projects.map(proj => (
+        {filteredProjects.map(proj => (
           <div key={proj.id} className="admin-card">
             <h3 style={{color: 'var(--color-gold)', margin: 0, display: 'flex', justifyContent: 'space-between'}}>
               {proj.name}

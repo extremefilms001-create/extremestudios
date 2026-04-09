@@ -2,12 +2,26 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Home.css';
 import { db } from '../firebase';
-import { collection, query, where, limit, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import ContentModal from '../components/ContentModal';
+import { useAuth } from '../contexts/AuthContext';
+import { useAlert } from '../contexts/AlertContext';
 
 function Home() {
   const [scrollY, setScrollY] = useState(0);
+  
   const [recentFilms, setRecentFilms] = useState([]);
   const [recentSeries, setRecentSeries] = useState([]);
+  
+  const [popularFilms, setPopularFilms] = useState([]);
+  const [popularSeries, setPopularSeries] = useState([]);
+  const [mostLiked, setMostLiked] = useState([]);
+  
+  const [viewingItem, setViewingItem] = useState(null);
+
+  const { currentUser } = useAuth();
+  const showAlert = useAlert();
+
   const [branding, setBranding] = useState({
     heroTitleBold: 'CAPTURE',
     heroTitleNormal: 'REAL MOMENTS',
@@ -23,18 +37,37 @@ function Home() {
   }, []);
 
   useEffect(() => {
-    async function fetchRecentContent() {
+    async function fetchAllContent() {
       try {
         const filmsRef = collection(db, 'films');
-        const qFilms = query(filmsRef, where('published', '==', true), limit(4));
+        const qFilms = query(filmsRef, where('published', '==', true));
         const qfSnap = await getDocs(qFilms);
-        setRecentFilms(qfSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const allFilms = qfSnap.docs.map(d => ({ id: d.id, _type: 'film', ...d.data() }));
         
         const seriesRef = collection(db, 'series');
-        const qSeries = query(seriesRef, where('published', '==', true), limit(4));
+        const qSeries = query(seriesRef, where('published', '==', true));
         const qsSnap = await getDocs(qSeries);
-        setRecentSeries(qsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const allSeries = qsSnap.docs.map(d => ({ id: d.id, _type: 'series', ...d.data() }));
 
+        // Standard sorting
+        const dateSortedFilms = [...allFilms].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        const dateSortedSeries = [...allSeries].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        
+        setRecentFilms(dateSortedFilms.slice(0, 4));
+        setRecentSeries(dateSortedSeries.slice(0, 4));
+
+        // Popular (Views)
+        const viewsSortedFilms = [...allFilms].sort((a,b) => (b.views || 0) - (a.views || 0));
+        const viewsSortedSeries = [...allSeries].sort((a,b) => (b.views || 0) - (a.views || 0));
+        
+        setPopularFilms(viewsSortedFilms.slice(0, 4));
+        setPopularSeries(viewsSortedSeries.slice(0, 4));
+
+        // Most Liked (Combined)
+        const combinedLiked = [...allFilms, ...allSeries].sort((a,b) => (b.likes || 0) - (a.likes || 0));
+        setMostLiked(combinedLiked.slice(0, 4));
+
+        // Branding
         const brandingRef = doc(db, 'site_settings', 'branding');
         const bSnap = await getDoc(brandingRef);
         if (bSnap.exists() && bSnap.data().heroTitleBold) {
@@ -45,15 +78,61 @@ function Home() {
         console.error('Error fetching content', e);
       }
     }
-    fetchRecentContent();
+    fetchAllContent();
   }, []);
 
-  // Calculate opacity based on scroll. It fades out after 500px of scrolling.
+  const handleSelect = (item, type) => {
+    if (!currentUser && !item.isFree) {
+      showAlert("Please log in or sign up first to access premium content.", "error");
+      return;
+    }
+    setViewingItem({ data: item, type });
+  };
+
+  const handleUpdateItem = (updatedItem) => {
+      // Opting not to heavily re-sort lists dynamically when scrolling on home page to save re-renders.
+      if (viewingItem?.data?.id === updatedItem.id) {
+          setViewingItem({ ...viewingItem, data: updatedItem });
+      }
+  };
+
   const heroOpacity = Math.max(1 - scrollY / 500, 0);
+
+  const renderCardRow = (title, items, linkPath, itemTypeOverride = null) => {
+    if (items.length === 0) return null;
+    return (
+      <section className="content-row">
+        <div className="section-header">
+          <h2>{title}</h2>
+          <Link to={linkPath} className="see-all">Explore More</Link>
+        </div>
+        <div className="grid-feed">
+          {items.map(item => {
+             const actualType = itemTypeOverride || item._type;
+             return (
+              <div onClick={() => handleSelect(item, actualType)} key={item.id} className="feed-card" style={{cursor: 'pointer'}}>
+                <div className="card-image" style={{ backgroundImage: `url(${item.thumbnail})` }}>
+                  {item.type === 'Upcoming' && <div className="upcoming-tag">Upcoming</div>}
+                </div>
+                <div className="card-info">
+                  <h3>{item.title}</h3>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <span className="tag text-gradient">{item.type}</span>
+                    <span style={{fontSize: '0.8rem', color: '#a3a3a3'}}>
+                      {actualType === 'series' && `Ep: ${item.episodes?.length || 0}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
+  };
 
   return (
     <div className="home-page">
-      {/* Hero Section */}
       <section className="hero-section" style={{ opacity: heroOpacity, transform: `translateY(${scrollY * 0.5}px)` }}>
         <div className="hero-content fade-in">
           <h1 className="hero-title">
@@ -70,43 +149,22 @@ function Home() {
         <div className="hero-overlay"></div>
       </section>
 
-      {/* Content Sections */}
       <div className="content-sections container">
-        <section className="content-row">
-          <div className="section-header">
-            <h2>Recent Feature Films</h2>
-            <Link to="/films?type=Feature Film" className="see-all">See All</Link>
-          </div>
-          <div className="grid-feed">
-            {recentFilms.length > 0 ? recentFilms.map(film => (
-              <Link to={`/films/${film.id}`} key={film.id} className="feed-card">
-                <div className="card-image" style={{ backgroundImage: `url(${film.thumbnail})` }}></div>
-                <div className="card-info">
-                  <h3>{film.title}</h3>
-                  <span className="tag text-gradient">{film.type}</span>
-                </div>
-              </Link>
-            )) : <p className="empty-state">No feature films yet.</p>}
-          </div>
-        </section>
-
-        <section className="content-row">
-          <div className="section-header">
-            <h2>Recent Series</h2>
-            <Link to="/series" className="see-all">See All</Link>
-          </div>
-          <div className="grid-feed">
-             {recentSeries.length > 0 ? recentSeries.map(series => (
-              <Link to={`/series/${series.id}`} key={series.id} className="feed-card">
-                <div className="card-image" style={{ backgroundImage: `url(${series.thumbnail})` }}></div>
-                <div className="card-info">
-                  <h3>{series.title}</h3>
-                </div>
-              </Link>
-            )) : <p className="empty-state">No series yet.</p>}
-          </div>
-        </section>
+        {renderCardRow("Most Liked Movies", mostLiked, "/films")}
+        {renderCardRow("Popular Feature Films", popularFilms, "/films?type=Feature Film", "film")}
+        {renderCardRow("Popular Series", popularSeries, "/series", "series")}
+        {renderCardRow("Recent Feature Films", recentFilms, "/films?type=Feature Film", "film")}
+        {renderCardRow("Recent Series", recentSeries, "/series", "series")}
       </div>
+
+      {viewingItem && (
+        <ContentModal 
+            item={viewingItem.data} 
+            type={viewingItem.type} 
+            onClose={() => setViewingItem(null)} 
+            onUpdateItem={handleUpdateItem} 
+        />
+      )}
     </div>
   );
 }
