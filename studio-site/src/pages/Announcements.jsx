@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlert } from '../contexts/AlertContext';
 
 function Announcements() {
   const { userData } = useAuth();
+  const showAlert = useAlert();
   const [announcements, setAnnouncements] = useState([]);
   const [formData, setFormData] = useState({ title: '', content: '' });
   
@@ -23,7 +25,7 @@ function Announcements() {
 
   const handlePost = async (e) => {
     e.preventDefault();
-    if (!canPost) return alert('Unauthorized');
+    if (!canPost) return showAlert('Unauthorized');
     
     await addDoc(collection(db, 'announcements'), {
       title: formData.title,

@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlert } from '../contexts/AlertContext';
 
 function Payments() {
   const { userData, currentUser } = useAuth();
+  const showAlert = useAlert();
   const [contributions, setContributions] = useState([]);
   const [formData, setFormData] = useState({ txId: '', amount: '10000', month: new Date().toLocaleString('default', { month: 'long' }) });
   
@@ -40,7 +42,7 @@ function Payments() {
   };
 
   const handleUpdateStatus = async (id, status) => {
-    if (!canVerify) return alert('Unauthorized');
+    if (!canVerify) return showAlert('Unauthorized');
     await updateDoc(doc(db, 'contributions', id), { status });
     loadContributions();
   };

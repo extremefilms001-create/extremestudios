@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlert } from '../contexts/AlertContext';
 
 function Projects() {
   const { userData } = useAuth();
+  const showAlert = useAlert();
   const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({ name: '', milestoneTitle: '' });
   
@@ -21,7 +23,7 @@ function Projects() {
 
   const handleAddProject = async (e) => {
     e.preventDefault();
-    if (!canManage) return alert('Unauthorized');
+    if (!canManage) return showAlert('Unauthorized');
     
     await addDoc(collection(db, 'projects'), {
       name: newProject.name,
@@ -34,14 +36,14 @@ function Projects() {
   };
 
   const addMilestone = async (project, title) => {
-    if (!canManage) return alert('Unauthorized');
+    if (!canManage) return showAlert('Unauthorized');
     const newMilestones = [...(project.milestones || []), { title, completed: false }];
     await updateDoc(doc(db, 'projects', project.id), { milestones: newMilestones });
     loadProjects();
   };
 
   const toggleMilestone = async (project, index) => {
-    if (!canManage) return alert('Unauthorized');
+    if (!canManage) return showAlert('Unauthorized');
     const newMilestones = [...project.milestones];
     newMilestones[index].completed = !newMilestones[index].completed;
     

@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { useAlert } from '../contexts/AlertContext';
 import './Content.css';
 
 function Films() {
   const [films, setFilms] = useState([]);
   const [filter, setFilter] = useState('All');
   const [selectedFilm, setSelectedFilm] = useState(null);
+  const showAlert = useAlert();
   
   // Payment Form State
   const [txId, setTxId] = useState('');
@@ -30,7 +32,7 @@ function Films() {
 
   const handleSelect = (film) => {
     if (!currentUser) {
-      alert("Please log in or sign up first to access this content.");
+      showAlert("Please log in or sign up first to access this content.", "error");
       return;
     }
     setSelectedFilm(film);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlert } from '../contexts/AlertContext';
 
 const ROLES = [
   'CEO', 'SECRETARY', 'PRESIDENT', 'MANAGING DIRECTOR', 'ASS. MANAGING DIRECTOR', 
@@ -11,6 +12,7 @@ const ROLES = [
 
 function BoardMembers() {
   const { userData } = useAuth();
+  const showAlert = useAlert();
   const [members, setMembers] = useState([]);
   
   const canManage = ['CEO', 'SECRETARY'].includes(userData?.role?.toUpperCase());
@@ -27,7 +29,7 @@ function BoardMembers() {
   }
 
   const handleApprove = async (id) => {
-    if (!canManage) return alert('Unauthorized');
+    if (!canManage) return showAlert('Unauthorized');
     await updateDoc(doc(db, 'users', id), { approved: true });
     loadMembers();
   };

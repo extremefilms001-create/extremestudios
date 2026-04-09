@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AlertProvider } from './contexts/AlertContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
@@ -39,26 +40,28 @@ function AdminRoute({ children }) {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router basename="/studio">
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/pending" element={<PendingApproval />} />
-          
-          {/* Protected Admin Routes */}
-          <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
-          <Route path="/upload" element={<AdminRoute><Upload /></AdminRoute>} />
-          <Route path="/deploy" element={<AdminRoute><Deploy /></AdminRoute>} />
-          <Route path="/projects" element={<AdminRoute><Projects /></AdminRoute>} />
-          <Route path="/transactions" element={<AdminRoute><Transactions /></AdminRoute>} />
-          <Route path="/payments" element={<AdminRoute><Payments /></AdminRoute>} />
-          <Route path="/board" element={<AdminRoute><BoardMembers /></AdminRoute>} />
-          <Route path="/announcements" element={<AdminRoute><Announcements /></AdminRoute>} />
-          <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <AlertProvider>
+      <AuthProvider>
+        <Router basename="/studio">
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/pending" element={<PendingApproval />} />
+            
+            {/* Protected Admin Routes */}
+            <Route path="/" element={<AdminRoute><Dashboard /></AdminRoute>} />
+            <Route path="/upload" element={<AdminRoute><Upload /></AdminRoute>} />
+            <Route path="/deploy" element={<AdminRoute><Deploy /></AdminRoute>} />
+            <Route path="/projects" element={<AdminRoute><Projects /></AdminRoute>} />
+            <Route path="/transactions" element={<AdminRoute><Transactions /></AdminRoute>} />
+            <Route path="/payments" element={<AdminRoute><Payments /></AdminRoute>} />
+            <Route path="/board" element={<AdminRoute><BoardMembers /></AdminRoute>} />
+            <Route path="/announcements" element={<AdminRoute><Announcements /></AdminRoute>} />
+            <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </AlertProvider>
   );
 }
 

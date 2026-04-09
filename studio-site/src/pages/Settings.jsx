@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlert } from '../contexts/AlertContext';
 
 function Settings() {
   const { userData } = useAuth();
+  const showAlert = useAlert();
   
   const canEditBranding = ['CEO', 'SECRETARY'].includes(userData?.role?.toUpperCase());
   const canEditServices = ['HUMAN RESOURCES', 'MANAGING DIRECTOR', 'ASS. MANAGING DIRECTOR', 'SECRETARY'].includes(userData?.role?.toUpperCase());
@@ -40,7 +42,7 @@ function Settings() {
 
   const handleSaveContacts = async (e) => {
     e.preventDefault();
-    if (!canEditServices) return alert('Unauthorized');
+    if (!canEditServices) return showAlert('Unauthorized');
     
     setSaveStatus('Saving Contacts...');
     await setDoc(doc(db, 'site_settings', 'contacts'), contacts);
@@ -49,7 +51,7 @@ function Settings() {
 
   const handleSaveBranding = async (e) => {
     e.preventDefault();
-    if (!canEditBranding) return alert('Unauthorized');
+    if (!canEditBranding) return showAlert('Unauthorized');
     
     setSaveStatus('Saving Branding...');
     await setDoc(doc(db, 'site_settings', 'branding'), branding);

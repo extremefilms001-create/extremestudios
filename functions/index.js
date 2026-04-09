@@ -118,6 +118,16 @@ exports.uploadToDrive = functions.https.onRequest((req, res) => {
                 },
                 fields: 'id, webViewLink, webContentLink'
               });
+              
+              // Set permissions so anyone with the link can view it in the iframe
+              await drive.permissions.create({
+                fileId: driveRes.data.id,
+                requestBody: {
+                  role: 'reader',
+                  type: 'anyone',
+                }
+              });
+              
               resolve(driveRes.data);
             } catch(e) {
               console.error(e);

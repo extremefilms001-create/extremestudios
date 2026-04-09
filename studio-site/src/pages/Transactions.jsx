@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, updateDoc, doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlert } from '../contexts/AlertContext';
 
 function Transactions() {
   const { userData } = useAuth();
+  const showAlert = useAlert();
   const [transactions, setTransactions] = useState([]);
   
   const canVerify = ['CEO', 'SECRETARY', 'FINANCIAL MANAGER', 'ASSISTANT FINANCIAL MANAGER'].includes(userData?.role?.toUpperCase());
@@ -19,7 +21,7 @@ function Transactions() {
   }
 
   const handleApprove = async (tx) => {
-    if (!canVerify) return alert('Unauthorized');
+    if (!canVerify) return showAlert('Unauthorized');
     
     // Update Transaction status
     await updateDoc(doc(db, 'transactions', tx.id), { status: 'approved' });
@@ -33,7 +35,7 @@ function Transactions() {
   };
 
   const handleTerminate = async (tx) => {
-    if (!canVerify) return alert('Unauthorized');
+    if (!canVerify) return showAlert('Unauthorized');
     
     // Update Transaction status
     await updateDoc(doc(db, 'transactions', tx.id), { status: 'declined' });

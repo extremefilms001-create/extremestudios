@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlert } from '../contexts/AlertContext';
 
 function Upload() {
   const { userData } = useAuth();
+  const showAlert = useAlert();
   const [file, setFile] = useState(null);
   const [motherFolder, setMotherFolder] = useState('PRE-PRODUCTION');
   const [projectFolder, setProjectFolder] = useState('');
@@ -42,8 +44,8 @@ function Upload() {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!canUpload) return alert('Unauthorized to upload files directly.');
-    if (!file) return alert('Please select a file to upload.');
+    if (!canUpload) return showAlert('Unauthorized to upload files directly.');
+    if (!file) return showAlert('Please select a file to upload.');
 
     setLoading(true);
     setStatus('Uploading... Please wait (this can take a while for large videos).');

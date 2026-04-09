@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlert } from '../contexts/AlertContext';
 
 function Deploy() {
   const { userData } = useAuth();
+  const showAlert = useAlert();
   const [items, setItems] = useState([]);
   const [view, setView] = useState('films');
   const [formData, setFormData] = useState({ title: '', type: 'Feature Film', description: '', thumbnail: '', videoUrl: '', isFree: true, published: true });
@@ -23,7 +25,7 @@ function Deploy() {
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!canDeploy) return alert('Unauthorized');
+    if (!canDeploy) return showAlert('Unauthorized');
     try {
       await addDoc(collection(db, view), {
         ...formData,
@@ -37,13 +39,13 @@ function Deploy() {
   };
 
   const togglePublish = async (item) => {
-    if (!canHide) return alert('Only CEO and SECRETARY can hide/show content.');
+    if (!canHide) return showAlert('Only CEO and SECRETARY can hide/show content.');
     await updateDoc(doc(db, view, item.id), { published: !item.published });
     loadItems();
   };
 
   const handleDelete = async (id) => {
-    if (!canHide) return alert('Unauthorized');
+    if (!canHide) return showAlert('Unauthorized');
     await deleteDoc(doc(db, view, id));
     loadItems();
   };

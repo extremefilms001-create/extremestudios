@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { useAlert } from '../contexts/AlertContext';
 import './Content.css';
 
 function Series() {
   const [series, setSeries] = useState([]);
   const [selectedSeries, setSelectedSeries] = useState(null);
   const [activeEpisode, setActiveEpisode] = useState(null);
+  const showAlert = useAlert();
   
   // Payment Form State
   const [txId, setTxId] = useState('');
@@ -28,7 +30,7 @@ function Series() {
 
   const handleSelect = (s) => {
     if (!currentUser) {
-      alert("Please log in or sign up first to access this content.");
+      showAlert("Please log in or sign up first to access this content.", "error");
       return;
     }
     setSelectedSeries(s);
