@@ -15,7 +15,7 @@ function Deploy() {
   
   // Episode state
   const [activeSeries, setActiveSeries] = useState(null);
-  const [epFormData, setEpFormData] = useState({ title: '', description: '', thumbnail: '', videoUrl: '', duration: '' });
+  const [batchEpisodes, setBatchEpisodes] = useState([{ title: '', description: '', thumbnail: '', videoUrl: '', duration: '' }]);
 
   const canDeploy = ['CEO', 'SECRETARY', 'PRESIDENT', 'CREATIVE MANAGER', 'MANAGING DIRECTOR'].includes(userData?.role?.toUpperCase());
   const canHide = ['CEO', 'SECRETARY'].includes(userData?.role?.toUpperCase());
@@ -78,15 +78,15 @@ function Deploy() {
     if (!canDeploy) return showAlert('Unauthorized');
     try {
       await updateDoc(doc(db, 'series', activeSeries.id), {
-        episodes: arrayUnion({ ...epFormData })
+        episodes: arrayUnion(...batchEpisodes)
       });
-      setEpFormData({ title: '', description: '', thumbnail: '', videoUrl: '', duration: '' });
+      setBatchEpisodes([{ title: '', description: '', thumbnail: '', videoUrl: '', duration: '' }]);
       setActiveSeries(null);
       loadItems();
-      showAlert('Episode Added Successfully!', 'success');
+      showAlert('Episodes Added Successfully!', 'success');
     } catch(err) {
       console.error(err);
-      showAlert('Failed to add episode.');
+      showAlert('Failed to add episodes.');
     }
   };
 
@@ -141,7 +141,7 @@ function Deploy() {
               <td>{item.published ? <span className="badge badge-approved">Public</span> : <span className="badge badge-declined">Hidden</span>}</td>
               <td>
                 {typeLabel === 'series' && canDeploy && (
-                  <button className="btn-secondary" style={{padding: '0.2rem 0.6rem', fontSize: '0.8rem', marginRight: '0.5rem', borderColor: 'var(--color-gold)', color: 'var(--color-gold)'}} onClick={() => setActiveSeries(item)}>
+                  <button className="btn-secondary" style={{padding: '0.2rem 0.6rem', fontSize: '0.8rem', marginRight: '0.5rem', borderColor: 'var(--color-gold)', color: 'var(--color-gold)'}} onClick={() => { setActiveSeries(item); setBatchEpisodes([{ title: '', description: '', thumbnail: '', videoUrl: '', duration: '' }]); }}>
                     + Episode
                   </button>
                 )}
@@ -219,22 +219,73 @@ function Deploy() {
         </div>
       )}
 
-      {/* Dynamic Episode Addition Form ONLY shows in 'products' or 'series' view if activeSeries is set */}
+      {/* Dynamic Episode Addition Form ONLY shows if activeSeries is set */}
       {activeSeries && canDeploy && (
-        <div className="admin-card" style={{border: '1px solid var(--color-gold)', animation: 'slideUpFade 0.3s ease', marginBottom: '2rem'}}>
-          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-            <h3 style={{color: 'var(--color-gold)'}}>Adding Episode to: {activeSeries.title}</h3>
-            <button className="btn-secondary" type="button" onClick={() => setActiveSeries(null)} style={{padding: '0.2rem 0.5rem', fontSize:'0.8rem'}}>Cancel</button>
+        <div className="modal-overlay" style={{zIndex: 9999, position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+          <div className="modal-content glass admin-card" style={{border: '1px solid var(--color-gold)', width: '90%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', padding: '2rem'}}>
+            <button type="button" onClick={() => setActiveSeries(null)} style={{background: 'transparent', border: 'none', color: 'white', fontSize: '28px', cursor: 'pointer', position: 'absolute', top: '10px', right: '15px'}}>&times;</button>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+              <h3 style={{color: 'var(--color-gold)', margin: 0}}>Adding Episodes to: {activeSeries.title}</h3>
+            </div>
+            
+            <form onSubmit={handleAddEpisodeSubmit}>
+              {batchEpisodes.map((epFormData, index) => (
+                <div key={index} style={{marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
+                  <h4 style={{marginBottom: '1rem'}}>
+                    Episode {index + 1} 
+                    {batchEpisodes.length > 1 && (
+                      <button type="button" onClick={() => setBatchEpisodes(batchEpisodes.filter((_, i) => i !== index))} style={{background: 'none', border: 'none', color: 'var(--color-red)', fontSize: '0.9rem', cursor: 'pointer', float: 'right'}}>Remove</button>
+                    )}
+                  </h4>
+                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
+                    <input required placeholder="Episode Title" value={epFormData.title} onChange={e => {
+                        const newBatch = [...batchEpisodes];
+                        newBatch[index].title = e.target.value;
+                        setBatchEpisodes(newBatch);
+                    }} />
+                    <input placeholder="Duration (e.g. 45 min)" value={epFormData.duration} onChange={e => {
+                        const newBatch = [...batchEpisodes];
+                        newBatch[index].duration = e.target.value;
+                        setBatchEpisodes(newBatch);
+                    }} />
+                    <input required placeholder="Episode Thumbnail Link" value={epFormData.thumbnail} onChange={e => {
+                        const newBatch = [...batchEpisodes];
+                        newBatch[index].thumbnail = e.target.value;
+                        setBatchEpisodes(newBatch);
+                    }} />
+                    <input required placeholder="Episode Video Link (Drive, YT, etc)" value={epFormData.videoUrl} onChange={e => {
+                        const newBatch = [...batchEpisodes];
+                        newBatch[index].videoUrl = e.target.value;
+                        setBatchEpisodes(newBatch);
+                    }} />
+                    <textarea placeholder="Episode Description" value={epFormData.description} onChange={e => {
+                        const newBatch = [...batchEpisodes];
+                        newBatch[index].description = e.target.value;
+                        setBatchEpisodes(newBatch);
+                    }} style={{gridColumn: '1 / -1', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px'}} rows="2" />
+                  </div>
+                </div>
+              ))}
+              
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem'}}>
+                  <button type="button" className="btn-secondary" onClick={() => setBatchEpisodes([...batchEpisodes, { title: '', description: '', thumbnail: '', videoUrl: '', duration: '' }])}>+ Add Another Episode</button>
+                  <button type="submit" className="btn-primary">Upload All {batchEpisodes.length} Episode(s)</button>
+              </div>
+            </form>
           </div>
-          <form onSubmit={handleAddEpisodeSubmit} style={{marginTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
-            <input required placeholder="Episode Title" value={epFormData.title} onChange={e => setEpFormData({...epFormData, title: e.target.value})} />
-            <input placeholder="Duration (e.g. 45 min)" value={epFormData.duration} onChange={e => setEpFormData({...epFormData, duration: e.target.value})} />
-            <input required placeholder="Episode Thumbnail Link" value={epFormData.thumbnail} onChange={e => setEpFormData({...epFormData, thumbnail: e.target.value})} />
-            <input required placeholder="Episode Video Link (Drive, YT, etc)" value={epFormData.videoUrl} onChange={e => setEpFormData({...epFormData, videoUrl: e.target.value})} />
-            <textarea placeholder="Episode Description" value={epFormData.description} onChange={e => setEpFormData({...epFormData, description: e.target.value})} style={{gridColumn: '1 / -1', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px'}} rows="2" />
-            <button type="submit" className="btn-primary" style={{gridColumn: '1 / -1'}}>Upload Episode</button>
-          </form>
         </div>
+      )}
+
+      {view === 'films' && (
+        <>
+          {renderTable(items, "Deployed Films", "films")}
+        </>
+      )}
+
+      {view === 'series' && (
+        <>
+          {renderTable(seriesItems, "Deployed Series", "series")}
+        </>
       )}
 
       {view === 'products' && (
