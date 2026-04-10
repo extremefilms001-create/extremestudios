@@ -144,7 +144,11 @@ exports.uploadToDrive = functions.https.onRequest((req, res) => {
           const results = await Promise.all(uploadPromises);
           res.status(200).json({ success: true, files: results });
         } catch(err) {
-          res.status(500).json({ error: "Drive API Error", details: err.message });
+          let customDetails = err.message;
+          if (err.message && err.message.includes('Insufficient permissions for the specified parent')) {
+             customDetails = "The Service Account does not have Editor access to the parent folder. Please go to Google Drive, right-click the folders (PRE-PRODUCTION, PRODUCTION, etc), click Share, and grant 'Editor' access to your Google Service Account email!";
+          }
+          res.status(500).json({ error: "Drive API Error", details: customDetails, rawError: err.message });
         }
       });
 
