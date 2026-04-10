@@ -70,7 +70,7 @@ function Upload() {
         setStatus(`Success! File uploaded to ${projectFolder ? projectFolder : motherFolder}. Response: ` + JSON.stringify(data));
         setFile(null); // Reset
       } else {
-        setStatus(`Upload Failed: ${data.error || 'Unknown error. Check console and secrets.'}`);
+        setStatus(`Upload Failed: ${data.error || 'Unknown error.'} ${data.details ? '- ' + data.details : ''} ${data.rawError ? '(' + data.rawError + ')' : ''}`);
       }
     } catch (err) {
       console.error(err);
