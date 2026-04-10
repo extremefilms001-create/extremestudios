@@ -33,7 +33,6 @@ jobs:
           echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
           echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
           echo "GOOGLE_REFRESH_TOKEN=${{ secrets.GOOGLE_REFRESH_TOKEN }}" >> .env
-          echo "GOOGLE_SERVICE_ACCOUNT_JSON=$(echo '${{ secrets.DRIVE_UPLOADER }}' | tr -d '\n')" >> .env
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
