@@ -159,9 +159,10 @@ function Upload() {
         <h3>Drive Shortcuts</h3>
         <p style={{color: 'var(--color-white-dim)', marginBottom: '1rem'}}>Need to manage the files? Open the mother folders directly:</p>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <a href="https://drive.google.com/drive/u/1/folders/1hTEDfi-Pa_8MmW7aXqAzFHU7n2Q-ysSf" target="_blank" rel="noreferrer" className="btn-secondary">PRE-PRODUCTION</a>
-          <a href="https://drive.google.com/drive/u/1/folders/14u-vmJm1koq2el6l9BaNF5ocE3DlMHk3" target="_blank" rel="noreferrer" className="btn-secondary">PRODUCTION</a>
-          <a href="https://drive.google.com/drive/u/1/folders/1r05SAKg-5IWO_EhG6XecgkAabM34wx-B" target="_blank" rel="noreferrer" className="btn-secondary">POST-PRODUCTION</a>
+          <a href="https://drive.google.com/drive/folders/1r05SAKg-5IWO_EhG6XecgkAabM34wx-B" target="_blank" rel="noreferrer" className="btn-secondary">PRE-PRODUCTION</a>
+          <a href="https://drive.google.com/drive/folders/1hTEDfi-Pa_8MmW7aXqAzFHU7n2Q-ysSf" target="_blank" rel="noreferrer" className="btn-secondary">PRODUCTION</a>
+          <a href="https://drive.google.com/drive/folders/14u-vmJm1koq2el6l9BaNF5ocE3DlMHk3" target="_blank" rel="noreferrer" className="btn-secondary">POST-PRODUCTION</a>
+          <a href="https://drive.google.com/drive/folders/12W7zvv7ZfKdUsUBjSCwmDr7vzBBJPHpp" target="_blank" rel="noreferrer" className="btn-secondary">REPORTS</a>
         </div>
       </div>
     </div>
