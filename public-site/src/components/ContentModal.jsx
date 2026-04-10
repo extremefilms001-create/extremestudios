@@ -74,38 +74,38 @@ export default function ContentModal({ item, type, onClose, onUpdateItem }) {
     if (!currentUser) return showAlert("Please log in to react.", "error");
 
     const ref = doc(db, collectionName, item.id);
-    const hasLiked = item.likedBy?.includes(currentUser.uid);
-    const hasDisliked = item.dislikedBy?.includes(currentUser.uid);
+    const hasLiked = item.likedBy?.includes(currentUser.email);
+    const hasDisliked = item.dislikedBy?.includes(currentUser.email);
     
     try {
         let updatedItem = { ...item };
 
         if (actionType === 'like') {
             if (hasLiked) return;
-            let updates = { likes: increment(1), likedBy: arrayUnion(currentUser.uid) };
+            let updates = { likes: increment(1), likedBy: arrayUnion(currentUser.email) };
             updatedItem.likes = (item.likes || 0) + 1;
-            updatedItem.likedBy = [...(item.likedBy || []), currentUser.uid];
+            updatedItem.likedBy = [...(item.likedBy || []), currentUser.email];
 
             if (hasDisliked) {
                 updates.dislikes = increment(-1);
-                updates.dislikedBy = arrayRemove(currentUser.uid);
+                updates.dislikedBy = arrayRemove(currentUser.email);
                 updatedItem.dislikes = (item.dislikes || 1) - 1;
-                updatedItem.dislikedBy = (item.dislikedBy || []).filter(id => id !== currentUser.uid);
+                updatedItem.dislikedBy = (item.dislikedBy || []).filter(id => id !== currentUser.email);
             }
             await updateDoc(ref, updates);
             if (onUpdateItem) onUpdateItem(updatedItem);
 
         } else {
             if (hasDisliked) return;
-            let updates = { dislikes: increment(1), dislikedBy: arrayUnion(currentUser.uid) };
+            let updates = { dislikes: increment(1), dislikedBy: arrayUnion(currentUser.email) };
             updatedItem.dislikes = (item.dislikes || 0) + 1;
-            updatedItem.dislikedBy = [...(item.dislikedBy || []), currentUser.uid];
+            updatedItem.dislikedBy = [...(item.dislikedBy || []), currentUser.email];
 
             if (hasLiked) {
                 updates.likes = increment(-1);
-                updates.likedBy = arrayRemove(currentUser.uid);
+                updates.likedBy = arrayRemove(currentUser.email);
                 updatedItem.likes = (item.likes || 1) - 1;
-                updatedItem.likedBy = (item.likedBy || []).filter(id => id !== currentUser.uid);
+                updatedItem.likedBy = (item.likedBy || []).filter(id => id !== currentUser.email);
             }
             await updateDoc(ref, updates);
             if (onUpdateItem) onUpdateItem(updatedItem);
@@ -170,11 +170,11 @@ export default function ContentModal({ item, type, onClose, onUpdateItem }) {
 
   const renderInteractions = () => (
     <div className="interactions" style={{marginTop: '1rem', display: 'flex', gap: '1rem'}}>
-      <button className="btn-secondary" onClick={() => handleInteraction('like')} style={{color: item.likedBy?.includes(currentUser?.uid) ? '#00ff00' : 'var(--color-white)', borderColor: item.likedBy?.includes(currentUser?.uid) ? '#00ff00' : 'var(--color-white-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
+      <button className="btn-secondary" onClick={() => handleInteraction('like')} style={{color: item.likedBy?.includes(currentUser?.email) ? '#00ff00' : 'var(--color-white)', borderColor: item.likedBy?.includes(currentUser?.email) ? '#00ff00' : 'var(--color-white-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> 
           {(item.likes || 0)}
       </button>
-      <button className="btn-secondary" onClick={() => handleInteraction('dislike')} style={{color: item.dislikedBy?.includes(currentUser?.uid) ? 'var(--color-red)' : 'var(--color-white)', borderColor: item.dislikedBy?.includes(currentUser?.uid) ? 'var(--color-red)' : 'var(--color-white-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
+      <button className="btn-secondary" onClick={() => handleInteraction('dislike')} style={{color: item.dislikedBy?.includes(currentUser?.email) ? 'var(--color-red)' : 'var(--color-white)', borderColor: item.dislikedBy?.includes(currentUser?.email) ? 'var(--color-red)' : 'var(--color-white-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem'}}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path></svg> 
           {(item.dislikes || 0)}
       </button>
