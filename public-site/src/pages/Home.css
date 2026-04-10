@@ -144,4 +144,30 @@
   .hero-title {
     font-size: 2.5rem;
   }
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+  .hero-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .grid-feed {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--space-md);
+  }
+  .card-image {
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+  .grid-feed {
+    grid-template-columns: 1fr;
+  }
+  .card-image {
+    height: 300px;
+  }
 }

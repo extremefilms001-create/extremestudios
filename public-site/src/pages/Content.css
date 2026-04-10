@@ -222,5 +222,23 @@
   }
   .series-episodes-sidebar {
     flex: 1;
+    border-left: none;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .payment-modal {
+    padding: var(--space-md);
+  }
+  .auth-form .form-row {
+    flex-direction: column;
+  }
+  .auth-form .form-group.half {
+    width: 100%;
   }
 }

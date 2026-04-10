@@ -17,6 +17,7 @@ import Payments from './pages/Payments';
 import BoardMembers from './pages/BoardMembers';
 import Announcements from './pages/Announcements';
 import Settings from './pages/Settings';
+import Users from './pages/Users';
 
 function AdminRoute({ children }) {
   const { currentUser, userData } = useAuth();
@@ -57,6 +58,7 @@ function App() {
             <Route path="/payments" element={<AdminRoute><Payments /></AdminRoute>} />
             <Route path="/board" element={<AdminRoute><BoardMembers /></AdminRoute>} />
             <Route path="/announcements" element={<AdminRoute><Announcements /></AdminRoute>} />
+            <Route path="/users" element={<AdminRoute><Users /></AdminRoute>} />
             <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
           </Routes>
         </Router>

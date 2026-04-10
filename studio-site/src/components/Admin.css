@@ -138,3 +138,59 @@
 .badge-pending { background: rgba(255, 215, 0, 0.2); color: var(--color-gold); }
 .badge-approved { background: rgba(0, 200, 0, 0.2); color: #00ff00; }
 .badge-declined { background: rgba(230, 0, 0, 0.2); color: var(--color-red); }
+
+/* Responsive Admin Layout */
+@media (max-width: 900px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .sidebar-links {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: var(--space-sm);
+  }
+  
+  .side-link {
+    padding: var(--space-sm) var(--space-md);
+    white-space: nowrap;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+  }
+  
+  .side-link:hover, .side-link.active {
+    border-left: none;
+    border-bottom: 3px solid var(--color-red);
+  }
+
+  .admin-main {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-page-header h1 {
+    font-size: 1.5rem;
+  }
+  .admin-card {
+    padding: var(--space-md);
+  }
+  .form-row {
+    flex-direction: column;
+  }
+  .form-group.half {
+    width: 100%;
+  }
+  .admin-table {
+    display: block;
+    overflow-x: auto;
+  }
+}

@@ -17,6 +17,7 @@ function Sidebar() {
     { to: '/transactions', label: 'Transactions', icon: <FaMoneyBillWave /> },
     { to: '/payments', label: 'Payment Records', icon: <FaHistory /> },
     { to: '/board', label: 'Board Members', icon: <FaUsers /> },
+    { to: '/users', label: 'Users Data', icon: <FaUsers /> },
     { to: '/announcements', label: 'Announcements', icon: <FaBullhorn /> },
     { to: '/settings', label: 'Settings', icon: <FaCog /> }
   ];
