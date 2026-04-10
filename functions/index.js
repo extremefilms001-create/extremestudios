@@ -9,9 +9,9 @@ admin.initializeApp();
 
 // Hardcoded explicit folder mappings given in the spec
 const FOLDER_MAP = {
-  'PRE-PRODUCTION': '1r05SAKg-5IWO_EhG6XecgkAabM34wx-B',
-  'PRODUCTION': '1hTEDfi-Pa_8MmW7aXqAzFHU7n2Q-ysSf',
-  'POST-PRODUCTION': '14u-vmJm1koq2el6l9BaNF5ocE3DlMHk3',
+  'PRE-PRODUCTION': '1hTEDfi-Pa_8MmW7aXqAzFHU7n2Q-ysSf',
+  'PRODUCTION': '14u-vmJm1koq2el6l9BaNF5ocE3DlMHk3',
+  'POST-PRODUCTION': '1r05SAKg-5IWO_EhG6XecgkAabM34wx-B',
   'Reports': '12W7zvv7ZfKdUsUBjSCwmDr7vzBBJPHpp'
 };
 
