@@ -5,7 +5,7 @@ import { useAlert } from '../contexts/AlertContext';
 function Upload() {
   const { userData } = useAuth();
   const showAlert = useAlert();
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [motherFolder, setMotherFolder] = useState('PRE-PRODUCTION');
   const [projectFolder, setProjectFolder] = useState('');
   const [status, setStatus] = useState('');
@@ -31,7 +31,7 @@ function Upload() {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setFile(e.dataTransfer.files[0]);
+      setFiles(Array.from(e.dataTransfer.files));
       e.dataTransfer.clearData();
     }
   };
@@ -45,7 +45,7 @@ function Upload() {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!canUpload) return showAlert('Unauthorized to upload files directly.');
-    if (!file) return showAlert('Please select a file to upload.');
+    if (files.length === 0) return showAlert('Please select files to upload.');
 
     setLoading(true);
     setStatus('Uploading... Please wait (this can take a while for large videos).');
@@ -56,7 +56,7 @@ function Upload() {
     if (projectFolder.trim()) {
       formData.append('projectFolder', projectFolder.trim());
     }
-    formData.append('file', file);
+    files.forEach(f => formData.append('file', f));
 
     try {
       const response = await fetch('/api/uploadToDrive', {
@@ -68,7 +68,7 @@ function Upload() {
 
       if (response.ok) {
         setStatus('Success');
-        setFile(null); // Reset
+        setFiles([]); // Reset
       } else {
         setStatus(`Upload Failed: ${data.error || 'Unknown error.'} ${data.details ? '- ' + data.details : ''} ${data.rawError ? '(' + data.rawError + ')' : ''}`);
       }
@@ -134,23 +134,30 @@ function Upload() {
             >
               <input 
                 type="file" 
+                multiple
                 ref={fileInputRef}
-                onChange={e => setFile(e.target.files[0])} 
+                onChange={e => setFiles(Array.from(e.target.files))} 
                 style={{ display: 'none' }} 
               />
-              {file ? (
+              {files.length > 0 ? (
                 <div>
-                  <h4 style={{ color: 'var(--color-gold)' }}>Selected Source:</h4>
-                  <p>{file.name} ({(file.size / (1024*1024)).toFixed(2)} MB)</p>
+                  <h4 style={{ color: 'var(--color-gold)', marginBottom: '1rem' }}>Selected Sources ({files.length}):</h4>
+                  <ul style={{ listStyle: 'none', padding: 0, textAlign: 'left', display: 'inline-block' }}>
+                    {files.map((f, i) => (
+                      <li key={i} style={{ marginBottom: '0.5rem', color: 'var(--color-white-dim)', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+                        {f.name} <span style={{fontSize: '0.8rem', marginLeft: '0.5rem'}}>({(f.size / (1024*1024)).toFixed(2)} MB)</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ) : (
-                <p style={{ color: 'var(--color-white-dim)' }}>Drag & Drop your file here, or click to browse</p>
+                <p style={{ color: 'var(--color-white-dim)' }}>Drag & Drop your files here, or click to browse</p>
               )}
             </div>
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary" style={{alignSelf: 'flex-start'}}>
-            {loading ? 'Uploading...' : 'Upload File securely'}
+            {loading ? 'Uploading...' : 'Upload Files securely'}
           </button>
         </form>
       </div>
