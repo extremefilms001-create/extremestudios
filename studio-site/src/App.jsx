@@ -18,6 +18,7 @@ import BoardMembers from './pages/BoardMembers';
 import Announcements from './pages/Announcements';
 import Settings from './pages/Settings';
 import Users from './pages/Users';
+import Account from './pages/Account';
 
 function AdminRoute({ children }) {
   const { currentUser, userData } = useAuth();
@@ -60,6 +61,7 @@ function App() {
             <Route path="/announcements" element={<AdminRoute><Announcements /></AdminRoute>} />
             <Route path="/users" element={<AdminRoute><Users /></AdminRoute>} />
             <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
+            <Route path="/account" element={<AdminRoute><Account /></AdminRoute>} />
           </Routes>
         </Router>
       </AuthProvider>

@@ -4,6 +4,7 @@ import './Home.css';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import ContentModal from '../components/ContentModal';
+import CarouselRow from '../components/CarouselRow';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlert } from '../contexts/AlertContext';
 
@@ -108,39 +109,6 @@ function Home() {
 
   const heroOpacity = Math.max(1 - scrollY / 500, 0);
 
-  const renderCardRow = (title, items, linkPath, itemTypeOverride = null) => {
-    if (items.length === 0) return null;
-    return (
-      <section className="content-row">
-        <div className="section-header">
-          <h2>{title}</h2>
-          <Link to={linkPath} className="see-all">Explore More</Link>
-        </div>
-        <div className="grid-feed">
-          {items.map(item => {
-             const actualType = itemTypeOverride || item._type;
-             return (
-              <div onClick={() => handleSelect(item, actualType)} key={item.id} className="feed-card" style={{cursor: 'pointer'}}>
-                <div className="card-image" style={{ backgroundImage: `url(${item.thumbnail})` }}>
-                  {item.type === 'Upcoming' && <div className="upcoming-tag">Upcoming</div>}
-                </div>
-                <div className="card-info">
-                  <h3>{item.title}</h3>
-                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                    <span className="tag text-gradient">{item.type}</span>
-                    <span style={{fontSize: '0.8rem', color: '#a3a3a3'}}>
-                      {actualType === 'series' && `Ep: ${item.episodes?.length || 0}`}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    );
-  };
-
   return (
     <div className="home-page">
       <section className="hero-section" style={{ opacity: heroOpacity, transform: `translateY(${scrollY * 0.5}px)` }}>
@@ -164,12 +132,12 @@ function Home() {
              <p className="empty-state" style={{textAlign: 'center', marginTop: '2rem'}}>Loading content...</p>
         ) : (
           <>
-            {renderCardRow("Most Liked Movies", mostLikedContent, "/films")}
-            {renderCardRow("Trending Movies", trendingContent, "/films")}
-            {renderCardRow("Recent Films", recentFilms, "/films", "film")}
-            {renderCardRow("Recent Shows", recentSeries, "/series", "series")}
-            {renderCardRow("Most Popular Film", popularFilms, "/films", "film")}
-            {renderCardRow("Most Popular Shows", popularSeries, "/series", "series")}
+            <CarouselRow title="Most Liked Movies" items={mostLikedContent} linkPath="/films" handleSelect={handleSelect} />
+            <CarouselRow title="Trending Movies" items={trendingContent} linkPath="/films" handleSelect={handleSelect} />
+            <CarouselRow title="Recent Films" items={recentFilms} linkPath="/films" itemTypeOverride="film" handleSelect={handleSelect} />
+            <CarouselRow title="Recent Shows" items={recentSeries} linkPath="/series" itemTypeOverride="series" handleSelect={handleSelect} />
+            <CarouselRow title="Most Popular Film" items={popularFilms} linkPath="/films" itemTypeOverride="film" handleSelect={handleSelect} />
+            <CarouselRow title="Most Popular Shows" items={popularSeries} linkPath="/series" itemTypeOverride="series" handleSelect={handleSelect} />
           </>
         )}
       </div>

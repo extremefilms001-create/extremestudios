@@ -12,6 +12,7 @@ import Films from './pages/Films';
 import Series from './pages/Series';
 import Services from './pages/Services';
 import Contact from './pages/Contact';
+import Account from './pages/Account';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
                 <Route path="/series" element={<Series />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/account" element={<Account />} />
               </Routes>
             </main>
             <Footer />
